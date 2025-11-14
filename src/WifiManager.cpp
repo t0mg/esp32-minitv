@@ -1,10 +1,9 @@
 #include "WifiManager.h"
+#include <ArduinoJson.h>
+#include "AsyncJson.h"
 
 // Simple WiFi manager for ESP32 using AsyncWebServer and Preferences
 // Inspired by https://randomnerdtutorials.com/esp32-wi-fi-manager-asyncwebserver/
-
-const char *WifiManager::PARAM_INPUT_1 = "ssid";
-const char *WifiManager::PARAM_INPUT_2 = "pass";
 
 WifiManager::WifiManager(AsyncWebServer *server, Prefs *prefs, Battery *battery)
     : server(server), prefs(prefs), _battery(battery), subnet(255, 255, 0, 0), previousMillis(0) {}
@@ -76,41 +75,59 @@ void WifiManager::setupServer()
               // DO NOT remove the -1 below, it is to avoid sending an extra null byte at the end
               request->send(200, "application/javascript", app_js_start, app_js_end - app_js_start - 1); });
 
-  server->on("/wifi", HTTP_GET, [](AsyncWebServerRequest *request)
-             { request->send(200, "text/html", String((const char *)wifimanager_html_start, (size_t)(wifimanager_html_end - wifimanager_html_start))); });
+  server->on("/settings", HTTP_GET, [this](AsyncWebServerRequest *request)
+             {
+    DynamicJsonDocument json(256);
+    json["ssid"] = prefs->getSsid();
+    json["brightness"] = prefs->getBrightness();
+    json["osdLevel"] = prefs->getOsdLevel();
+    json["apMode"] = isAPMode();
+    String response;
+    serializeJson(json, response);
+    request->send(200, "application/json", response); });
 
-  server->on("/brightness", HTTP_GET, [this](AsyncWebServerRequest *request)
-             { request->send(200, "text/plain", String(prefs->getBrightness())); });
+  AsyncCallbackJsonWebHandler *handler = new AsyncCallbackJsonWebHandler("/settings", [this](AsyncWebServerRequest *request, JsonVariant &json)
+                                                                          {
+    JsonObject jsonObj = json.as<JsonObject>();
+    bool restartRequired = false;
 
-  server->on(
-      "/brightness", HTTP_POST, [this](AsyncWebServerRequest *request)
-      {
-    if (request->hasParam("brightness", true))
-    {
-      String brightnessStr = request->getParam("brightness", true)->value();
-      int brightness = brightnessStr.toInt();
-      if (brightness >= 1 && brightness <= 255)
-      {
-        prefs->setBrightness(brightness);
-        request->send(200, "text/plain", "OK");
-      }
-      else
-      {
-        request->send(400, "text/plain", "Invalid brightness value");
-      }
+    if (jsonObj.containsKey("ssid")) {
+        String newSsid = jsonObj["ssid"].as<String>();
+        if (newSsid != prefs->getSsid()) {
+            prefs->setSsid(newSsid);
+            restartRequired = true;
+        }
     }
-    else
-    {
-      request->send(400, "text/plain", "Missing brightness parameter");
+
+    if (jsonObj.containsKey("pass")) {
+        String newPass = jsonObj["pass"].as<String>();
+        if (!newPass.isEmpty()) {
+            prefs->setPass(newPass);
+            restartRequired = true;
+        }
+    }
+
+    if (jsonObj.containsKey("brightness")) {
+        prefs->setBrightness(jsonObj["brightness"].as<int>());
+    }
+
+    if (jsonObj.containsKey("osdLevel")) {
+        prefs->setOsdLevel(jsonObj["osdLevel"].as<int>());
+    }
+
+    request->send(200, "application/json", "{\"status\":\"ok\"}");
+
+    if (restartRequired) {
+        delay(1000);
+        ESP.restart();
     } });
+  server->addHandler(handler);
 
   server->on("/voltage", HTTP_GET, [this](AsyncWebServerRequest *request)
              {
     float voltage = _battery->getVoltage();
     String jsonResponse = "{\"voltage\": " + String(voltage) + "}";
     request->send(200, "application/json", jsonResponse); });
-
-  setupWifiPostHandler();
 }
 
 void WifiManager::setupAccessPoint()
@@ -128,53 +145,15 @@ void WifiManager::setupAccessPoint()
   dnsServer.start(53, "*", WiFi.softAPIP());
 
   server->on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-             { request->send(200, "text/html", String((const char *)wifimanager_html_start, (size_t)(wifimanager_html_end - wifimanager_html_start))); });
+             { request->send(200, "text/html", index_html_start, index_html_end - index_html_start); });
 
   server->on("/index", HTTP_GET, [](AsyncWebServerRequest *request)
-             { request->send(200, "text/html", String((const char *)wifimanager_html_start, (size_t)(wifimanager_html_end - wifimanager_html_start))); });
+             { request->send(200, "text/html", index_html_start, index_html_end - index_html_start); });
 
   // Add captive portal handler for all other requests
-  server->addHandler(new CaptiveRequestHandler(wifimanager_html_start, wifimanager_html_end));
+  server->addHandler(new CaptiveRequestHandler(index_html_start, index_html_end));
 
-  setupWifiPostHandler();
   server->begin();
-}
-
-void WifiManager::setupWifiPostHandler()
-{
-  server->on("/wifi", HTTP_POST, [this](AsyncWebServerRequest *request)
-             {
-        String new_ssid = "";
-        String new_pass = "";
-
-        int params = request->params();
-        for(int i=0;i<params;i++){
-            const AsyncWebParameter* p = request->getParam(i);
-            if(p->isPost()){
-                if (p->name() == PARAM_INPUT_1) {
-                    new_ssid = p->value();
-                }
-                if (p->name() == PARAM_INPUT_2) {
-                    new_pass = p->value();
-                }
-            }
-        }
-
-        if(new_ssid == "") {
-            request->send(400, "text/plain", "Error: SSID is required");
-            return;
-        }
-
-        // Save new configuration
-        prefs->setSsid(new_ssid);
-        prefs->setPass(new_pass);
-
-        String response = "Configuration saved. Restarting...";
-        request->send(200, "text/plain", response);
-        
-        // Let the response be sent before restarting
-        delay(1000);
-        ESP.restart(); });
 }
 
 bool WifiManager::isConnected()

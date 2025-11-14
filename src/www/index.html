@@ -1,80 +1,174 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>ESP32-MiniTV Video Streamer</title>
-  <style>
-    body {
-      font-family: sans-serif;
-    }
+    <title>ESP32-MiniTV</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #0c0c0c;
+            color: #0f0;
+            text-shadow: 0 0 5px #0f0;
+        }
 
-    #video {
-      width: 640px;
-    }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            border: 2px solid #0f0;
+            padding: 20px;
+            box-shadow: 0 0 15px #0f0;
+            background-color: rgba(0, 255, 0, 0.05);
+        }
 
-    #previewImage {
-      display: block;
-    }
+        h1, h2 {
+            text-align: center;
+            text-transform: uppercase;
+        }
 
-    .controls {
-      margin: 10px 0;
-    }
+        .tabs {
+            overflow: hidden;
+            border-bottom: 2px solid #0f0;
+        }
 
-    .controls label {
-      margin-right: 10px;
-    }
+        .tabs button {
+            background-color: inherit;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            transition: 0.3s;
+            color: #0f0;
+            font-size: 17px;
+            text-transform: uppercase;
+        }
 
-    #stats {
-      margin-top: 10px;
-    }
-  </style>
+        .tabs button:hover {
+            background-color: #1a1a1a;
+        }
+
+        .tabs button.active {
+            background-color: #0f0;
+            color: #0c0c0c;
+            text-shadow: none;
+        }
+
+        .tabcontent {
+            display: none;
+            padding: 20px;
+            border-top: none;
+        }
+
+        input, select, button {
+            background-color: #1a1a1a;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 10px;
+            margin: 5px 0;
+            font-family: inherit;
+        }
+
+        input[type=submit] {
+            width: 100%;
+            background-color: #0f0;
+            color: #0c0c0c;
+            cursor: pointer;
+        }
+
+        input[type=submit]:hover {
+            background-color: #090;
+        }
+
+        .controls label, .settings label {
+            display: block;
+            margin: 10px 0;
+        }
+    </style>
 </head>
-
 <body>
-  <h1>ESP32-MiniTV Video Streamer</h1>
-  <p>Select a video file to stream.</p>
-  <input type="file" id="videoFile" accept="video/*">
-  <button id="startButton">Start Streaming</button>
-  <button id="stopButton">Stop Streaming</button>
+    <div class="container">
+        <h1>ESP32-MiniTV</h1>
 
-  <div class="controls">
-    <div>
-      <label for="scaleFactor">Scale:</label>
-      <select id="scaleFactor">
-        <option value="1">1x (240x280)</option>
-        <option value="0.5">0.5x (120x140)</option>
-      </select>
+        <div class="tabs">
+            <button class="tablinks" onclick="openTab(event, 'Streaming')" id="defaultOpen">Video Streaming</button>
+            <button class="tablinks" onclick="openTab(event, 'Settings')">Settings</button>
+        </div>
+
+        <div id="Streaming" class="tabcontent">
+            <h2>Video Streaming</h2>
+            <p>Select a video file to stream.</p>
+            <input type="file" id="videoFile" accept="video/*">
+            <button id="startButton">Start Streaming</button>
+            <button id="stopButton">Stop Streaming</button>
+
+            <div class="controls">
+                <div>
+                    <label for="jpegQuality">JPEG Quality:</label>
+                    <input type="range" id="jpegQuality" min="0.1" max="1.0" step="0.05" value="0.5">
+                </div>
+                <div>
+                    <label for="scalingMode">Scaling:</label>
+                    <select id="scalingMode">
+                        <option value="letterbox">Letterbox</option>
+                        <option value="crop">Crop</option>
+                        <option value="stretch">Stretch</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="stats">
+                <span>FPS: <span id="fpsDisplay">-</span></span><br>
+                <span>Frame Size: <span id="frameSizeDisplay">-</span> bytes</span><br>
+                <span>Battery Voltage: <span id="batteryVoltageDisplay">-</span> V</span>
+            </div>
+
+            <br>
+            <video id="video" controls loop style="width: 640px;"></video>
+            <img id="previewImage" alt="JPEG Preview">
+        </div>
+
+        <div id="Settings" class="tabcontent">
+            <h2>Settings</h2>
+            <div class="settings">
+                <form id="settingsForm">
+                    <label for="ssid">SSID</label>
+                    <input type="text" id="ssid" name="ssid" placeholder="Enter your SSID">
+
+                    <label for="pass">Password</label>
+                    <input type="password" id="pass" name="pass" placeholder="Enter your WiFi password">
+
+                    <label for="brightness">Brightness:</label>
+                    <input type="range" id="brightness" min="1" max="255" value="255">
+
+                    <label for="osdLevel">OSD Level:</label>
+                    <select id="osdLevel" name="osdLevel">
+                        <option value="0">Off</option>
+                        <option value="1">Standard</option>
+                        <option value="2">Debug</option>
+                    </select>
+
+                    <input type="submit" value="Save Settings">
+                </form>
+            </div>
+        </div>
     </div>
-    <div>
-      <label for="jpegQuality">JPEG Quality:</label>
-      <input type="range" id="jpegQuality" min="0.1" max="1.0" step="0.05" value="0.5">
-    </div>
-    <div>
-      <label for="scalingMode">Scaling:</label>
-      <select id="scalingMode">
-        <option value="letterbox">Letterbox</option>
-        <option value="crop">Crop</option>
-        <option value="stretch">Stretch</option>
-      </select>
-    </div>
-    <div>
-      <label for="brightness">Brightness:</label>
-      <input type="range" id="brightness" min="1" max="255" value="255">
-    </div>
-  </div>
 
-  <div id="stats">
-    <span>FPS: <span id="fpsDisplay">-</span></span><br>
-    <span>Frame Size: <span id="frameSizeDisplay">-</span> bytes</span><br>
-    <span>Battery Voltage: <span id="batteryVoltageDisplay">-</span> V</span>
-  </div>
-
-  <br>
-  <video id="video" controls loop style="width: 640px;"></video>
-  <img id="previewImage" alt="JPEG Preview">
-
-  <footer><a href="/wifi">Wifi settings</a></footer>
-
-  <script src="app.js"></script>
+    <script src="app.js"></script>
+    <script>
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablinks");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+        document.getElementById("defaultOpen").click();
+    </script>
 </body>
-
 </html>
