@@ -18,6 +18,7 @@ const streamingTabLabel = document.getElementById('streamingTabLabel');
 const settingsTabRadio = document.getElementById('tab-settings');
 const splashscreen = document.getElementById('splashscreen');
 const updateForm = document.getElementById('updateForm');
+const updateButton = document.getElementById('updateButton');
 const firmwareFile = document.getElementById('firmwareFile');
 const updateProgress = document.getElementById('updateProgress');
 
@@ -71,6 +72,8 @@ settingsForm.addEventListener('submit', (event) => {
 // OTA update
 updateForm.addEventListener('submit', (event) => {
   event.preventDefault();
+  updateButton.disabled = true;
+
   const file = firmwareFile.files[0];
   if (!file) {
     alert('Please select a firmware file.');
@@ -97,11 +100,13 @@ updateForm.addEventListener('submit', (event) => {
       alert(`Update failed! Server responded with status: ${xhr.status}`);
     }
     updateProgress.style.display = 'none';
+    updateButton.disabled = false;
   };
 
   xhr.onerror = () => {
     alert('An error occurred during the update.');
     updateProgress.style.display = 'none';
+    updateButton.disabled = false;
   };
 
   const formData = new FormData();

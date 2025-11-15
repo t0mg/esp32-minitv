@@ -80,6 +80,7 @@
     }
 
     .tabs>label {
+      width: 100%;
       padding: 14px 16px;
       border-bottom: 2px solid var(--main-color);
     }
@@ -92,7 +93,6 @@
       border-top: none;
       box-sizing: border-box;
       display: none;
-      order: 99;
       /* Move content to the end of the flex container */
       padding: 20px;
       width: 100%;
@@ -220,6 +220,17 @@
     progress::-webkit-progress-value {
       background-color: var(--main-color);
     }
+
+    @media (min-width: 600px) {
+      .tabcontent {
+        order: 99;
+      }
+
+      .tabs> label {
+        width: 33.33%;
+      }
+
+    }
   </style>
 </head>
 
@@ -268,10 +279,10 @@
         <form id="settingsForm">
           <span>Battery Voltage: <span id="batteryVoltageDisplay">-</span> V</span>
 
-          <label for="ssid">SSID</label>
+          <label for="ssid">Wifi SSID</label>
           <input type="text" id="ssid" name="ssid" placeholder="Enter your SSID">
 
-          <label for="pass">Password</label>
+          <label for="pass">Wifi Password</label>
           <input type="password" id="pass" name="pass" placeholder="Enter your WiFi password">
 
           <label for="brightness">Brightness</label>
@@ -294,8 +305,8 @@
         <form id="updateForm">
           <label for="firmwareFile">Select Firmware File (.bin)</label>
           <input type="file" id="firmwareFile" name="update" accept=".bin" required>
-          <input type="submit" value="Update Firmware">
           <progress id="updateProgress" value="0" max="100" style="display: none;"></progress>
+          <input id="updateButton" type="submit" value="Update Firmware">
         </form>
       </div>
     </div>
