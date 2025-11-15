@@ -84,6 +84,8 @@ void WifiManager::setupCommonRoutes()
     json["brightness"] = prefs->getBrightness();
     json["osdLevel"] = prefs->getOsdLevel();
     json["apMode"] = isAPMode();
+    json["version"] = APP_VERSION;
+    json["build"] = APP_BUILD_NUMBER;
     String response;
     serializeJson(json, response);
     request->send(200, "application/json", response); });
