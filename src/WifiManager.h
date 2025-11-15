@@ -13,8 +13,8 @@ extern const uint8_t index_html_start[] asm("_binary_src_www_index_html_start");
 extern const uint8_t index_html_end[] asm("_binary_src_www_index_html_end");
 extern const uint8_t app_js_start[] asm("_binary_src_www_app_js_start");
 extern const uint8_t app_js_end[] asm("_binary_src_www_app_js_end");
-extern const uint8_t wifimanager_html_start[] asm("_binary_src_www_wifimanager_html_start");
-extern const uint8_t wifimanager_html_end[] asm("_binary_src_www_wifimanager_html_end");
+extern const uint8_t vcr_ttf_start[] asm("_binary_src_www_vcr_ttf_start");
+extern const uint8_t vcr_ttf_end[] asm("_binary_src_www_vcr_ttf_end");
 
 class CaptiveRequestHandler : public AsyncWebHandler
 {
@@ -82,6 +82,7 @@ private:
 
   bool initWiFi();
   void setupServer();
+  void setupCommonRoutes();
   void setupAccessPoint();
   void setupWifiPostHandler();
 };

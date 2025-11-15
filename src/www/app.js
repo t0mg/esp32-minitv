@@ -1,28 +1,70 @@
+// UI elements
 const videoFile = document.getElementById('videoFile');
 const video = document.getElementById('video');
 const startButton = document.getElementById('startButton');
 const stopButton = document.getElementById('stopButton');
 const previewImage = document.getElementById('previewImage');
-const brightnessSlider = document.getElementById('brightness');
 const batteryVoltageDisplay = document.getElementById('batteryVoltageDisplay');
+const jpegQualitySlider = document.getElementById('jpegQuality');
+const scalingModeSelect = document.getElementById('scalingMode');
+const fpsDisplay = document.getElementById('fpsDisplay');
+const frameSizeDisplay = document.getElementById('frameSizeDisplay');
+const settingsForm = document.getElementById('settingsForm');
+const ssidInput = document.getElementById('ssid');
+const passInput = document.getElementById('pass');
+const brightnessSlider = document.getElementById('brightness');
+const osdLevelSelect = document.getElementById('osdLevel');
+const streamingTabLabel = document.getElementById('streamingTabLabel');
+const settingsTabRadio = document.getElementById('tab-settings');
+const splashscreen = document.getElementById('splashscreen');
 
-// fetch the initial brightness and set the slider
-fetch('/brightness')
-  .then(response => response.text())
-  .then(brightness => {
-    brightnessSlider.value = brightness;
-  });
+let ws;
+let videoFrameId;
+let fpsInterval;
+let lastFrameTime;
+let frameTimeBuffer;
+let apMode = false;
 
-// send the brightness to the server when the slider is changed
-brightnessSlider.addEventListener('change', () => {
-  fetch('/brightness', {
+// Fetch all settings from the server
+async function fetchSettings() {
+  let success = false;
+  await fetch('/settings')
+    .then(response => response.json())
+    .then(settings => {
+      ssidInput.value = settings.ssid;
+      brightnessSlider.value = settings.brightness;
+      osdLevelSelect.value = settings.osdLevel;
+      apMode = settings.apMode;
+      success = true;
+    })
+    .catch(error => console.warn('Error fetching settings:', error));
+  return success;
+  }
+
+// Save all settings
+settingsForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const settings = {
+    ssid: ssidInput.value,
+    pass: passInput.value,
+    brightness: parseInt(brightnessSlider.value),
+    osdLevel: parseInt(osdLevelSelect.value)
+  };
+
+  fetch('/settings', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
+      'Content-Type': 'application/json'
     },
-    body: `brightness=${brightnessSlider.value}`
+    body: JSON.stringify(settings)
+  }).then(() => {
+    alert('Settings saved!');
+  }).catch(error => {
+    console.error('Error saving settings:', error);
+    alert('Failed to save settings.');
   });
 });
+
 
 // Function to fetch and display battery voltage
 function fetchBatteryVoltage() {
@@ -36,189 +78,165 @@ function fetchBatteryVoltage() {
     .catch(error => console.error('Error fetching battery voltage:', error));
 }
 
-// Fetch battery voltage on page load
-fetchBatteryVoltage();
-
-// Refresh battery voltage every minute
-setInterval(fetchBatteryVoltage, 60000);
-
-
-// New UI elements
-const scaleFactorSelect = document.getElementById('scaleFactor');
-const jpegQualitySlider = document.getElementById('jpegQuality');
-const scalingModeSelect = document.getElementById('scalingMode');
-const fpsDisplay = document.getElementById('fpsDisplay');
-const frameSizeDisplay = document.getElementById('frameSizeDisplay');
-
-let ws;
-let videoFrameId;
-
-// Frame rate and stats
-let fpsInterval;
-let lastFrameTime;
-let frameTimeBuffer;
-
+// WebSocket connection
 function connectWebSocket() {
+  try {
     ws = new WebSocket(`ws://${window.location.host}/ws`);
-    ws.onopen = () => console.log("WebSocket connection established");
+    ws.onopen = () => {
+      console.log("WebSocket connection established");
+    };
     ws.onmessage = (event) => {
-        if (event.data === "ready") {
-            video.requestVideoFrameCallback(sendFrame);
-        }
+      if (event.data === "ready") {
+        video.requestVideoFrameCallback(sendFrame);
+      }
     };
     ws.onclose = () => {
-        console.log("WebSocket connection closed, retrying...");
-        setTimeout(connectWebSocket, 1000);
+      console.log("WebSocket connection closed, retrying...");
+      setTimeout(connectWebSocket, 1000);
     };
     ws.onerror = (error) => console.error("WebSocket error:", error);
+  } catch (e) {
+    console.warn("WebSocket connection failed.", e);
+  }
 }
 
 videoFile.addEventListener('change', () => {
-    const file = videoFile.files[0];
-    if (file) {
-        video.src = URL.createObjectURL(file);
-    }
+  const file = videoFile.files[0];
+  if (file) {
+    video.src = URL.createObjectURL(file);
+  }
 });
 
 function sendFrame() {
-    if (video.paused || video.ended) {
-        return; // Stop sending when video is paused or finished
+  if (video.paused || video.ended) {
+    return;
+  }
+
+  const jpegQuality = parseFloat(jpegQualitySlider.value);
+  const scalingMode = scalingModeSelect.value;
+  const canvas = document.createElement('canvas');
+  canvas.width = 288;
+  canvas.height = 240;
+  const context = canvas.getContext('2d');
+  const videoAspectRatio = video.videoWidth / video.videoHeight;
+  const canvasAspectRatio = canvas.width / canvas.height;
+  let sx = 0, sy = 0, sWidth = video.videoWidth, sHeight = video.videoHeight;
+  let dx = 0, dy = 0, dWidth = canvas.width, dHeight = canvas.height;
+
+  if (scalingMode === 'letterbox') {
+    if (videoAspectRatio > canvasAspectRatio) {
+      dHeight = canvas.width / videoAspectRatio;
+      dy = (canvas.height - dHeight) / 2;
+    } else {
+      dWidth = canvas.height * videoAspectRatio;
+      dx = (canvas.width - dWidth) / 2;
     }
-
-    const scale = parseFloat(scaleFactorSelect.value);
-    const jpegQuality = parseFloat(jpegQualitySlider.value);
-    const scalingMode = scalingModeSelect.value;
-
-    // Create a canvas to draw the frame on
-    const canvas = document.createElement('canvas');
-    let baseWidth = 288;
-    let baseHeight = 240;
-    canvas.width = baseWidth * scale;
-    canvas.height = baseHeight * scale;
-    const context = canvas.getContext('2d');
-
-    const videoAspectRatio = video.videoWidth / video.videoHeight;
-    const canvasAspectRatio = canvas.width / canvas.height;
-
-    let sx = 0, sy = 0, sWidth = video.videoWidth, sHeight = video.videoHeight;
-    let dx = 0, dy = 0, dWidth = canvas.width, dHeight = canvas.height;
-
-    if (scalingMode === 'letterbox') {
-        if (videoAspectRatio > canvasAspectRatio) {
-            dHeight = canvas.width / videoAspectRatio;
-            dy = (canvas.height - dHeight) / 2;
-        } else {
-            dWidth = canvas.height * videoAspectRatio;
-            dx = (canvas.width - dWidth) / 2;
-        }
-        context.fillStyle = 'black';
-        context.fillRect(0, 0, canvas.width, canvas.height);
-        context.drawImage(video, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
-    } else if (scalingMode === 'crop') {
-        if (videoAspectRatio > canvasAspectRatio) {
-            sWidth = video.videoHeight * canvasAspectRatio;
-            sx = (video.videoWidth - sWidth) / 2;
-        } else {
-            sHeight = video.videoWidth / canvasAspectRatio;
-            sy = (video.videoHeight - sHeight) / 2;
-        }
-        context.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
-    } else { // stretch
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    context.fillStyle = 'black';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(video, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
+  } else if (scalingMode === 'crop') {
+    if (videoAspectRatio > canvasAspectRatio) {
+      sWidth = video.videoHeight * canvasAspectRatio;
+      sx = (video.videoWidth - sWidth) / 2;
+    } else {
+      sHeight = video.videoWidth / canvasAspectRatio;
+      sy = (video.videoHeight - sHeight) / 2;
     }
+    context.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
+  } else { // stretch
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+  }
 
-    // Get the JPEG data as a Blob
-    canvas.toBlob(blob => {
-        if (blob) {
-            const now = performance.now();
-            if (lastFrameTime) {
-                const frameTime = now - lastFrameTime;
-                console.log("Frame time:", frameTime.toFixed(2), "ms"); // Debug
-                
-                // Ne garder que les intervalles raisonnables (éviter les valeurs aberrantes)
-                if (frameTime > 0 && frameTime < 1000) { // Ignorer les intervalles > 1s
-                    frameTimeBuffer.push(frameTime);
-                    console.log("FPS Buffer size:", frameTimeBuffer.length); // Debug
-                }
-            }
-            lastFrameTime = now;
-            
-            frameSizeDisplay.textContent = blob.size;
-
-            // Display the blob on the client side for verification
-            const imageUrl = URL.createObjectURL(blob);
-            previewImage.src = imageUrl;
-            previewImage.onload = () => {
-                URL.revokeObjectURL(imageUrl); // Clean up the object URL
-            };
-
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(blob); // Send the binary data
-            }
-        } else {
-            console.error("Failed to create JPEG blob.");
+  canvas.toBlob(blob => {
+    if (blob) {
+      const now = performance.now();
+      if (lastFrameTime) {
+        const frameTime = now - lastFrameTime;
+        if (frameTime > 0 && frameTime < 1000) {
+          frameTimeBuffer.push(frameTime);
         }
-    }, 'image/jpeg', jpegQuality);
+      }
+      lastFrameTime = now;
+      frameSizeDisplay.textContent = blob.size;
+      const imageUrl = URL.createObjectURL(blob);
+      previewImage.src = imageUrl;
+      previewImage.onload = () => URL.revokeObjectURL(imageUrl);
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(blob);
+      }
+    }
+  }, 'image/jpeg', jpegQuality);
 }
 
 startButton.onclick = () => {
-    if (!video.src) {
-        alert("Please select a video file first.");
-        return;
+  if (!video.src) {
+    alert("Please select a video file first.");
+    return;
+  }
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    alert("WebSocket is not connected. Please wait.");
+    return;
+  }
+  lastFrameTime = performance.now();
+  frameTimeBuffer = [];
+  fpsInterval = setInterval(() => {
+    if (frameTimeBuffer && frameTimeBuffer.length > 0) {
+      const avgInterval = frameTimeBuffer.reduce((a, b) => a + b) / frameTimeBuffer.length;
+      const currentFps = 1000 / avgInterval;
+      fpsDisplay.textContent = currentFps.toFixed(1);
+      frameTimeBuffer = [];
+    } else {
+      fpsDisplay.textContent = '0.0';
     }
-    if (!ws || ws.readyState !== WebSocket.OPEN) {
-        alert("WebSocket is not connected. Please wait.");
-        return;
-    }
-    console.log("Starting stream...");
-
-    // Reset and start FPS counter
-    lastFrameTime = performance.now();
-    frameTimeBuffer = [];
-    
-    // Debug log pour vérifier l'initialisation
-    console.log("Starting FPS counter, initial time:", lastFrameTime);
-    
-    fpsInterval = setInterval(() => {
-        if (frameTimeBuffer && frameTimeBuffer.length > 0) {
-            console.log("Calculating FPS from", frameTimeBuffer.length, "frames"); // Debug
-            
-            // Calculer la moyenne des intervalles entre les trames
-            const avgInterval = frameTimeBuffer.reduce((a, b) => a + b) / frameTimeBuffer.length;
-            const currentFps = 1000 / avgInterval; // Convertir l'intervalle en FPS
-            
-            console.log("Average interval:", avgInterval.toFixed(2), "ms, FPS:", currentFps.toFixed(1)); // Debug
-            
-            fpsDisplay.textContent = currentFps.toFixed(1);
-            
-            // Réinitialiser le buffer pour la prochaine période
-            frameTimeBuffer = [];
-        } else {
-            console.log("No frames in buffer"); // Debug
-            fpsDisplay.textContent = '0.0';
-        }
-    }, 1000);
-
-    video.play();
-    ws.send("START");
+  }, 1000);
+  video.play();
+  ws.send("START");
 };
 
 stopButton.onclick = () => {
-    console.log("Stopping stream...");
-    if (videoFrameId) {
-        video.cancelVideoFrameCallback(videoFrameId); // Cancel the request(videoFrameId); // Stop the animation loop
-        videoFrameId = null;
-    }
-    video.pause(); // Pause the video
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send("STOP"); // Send a message to ESP32 to stop video player
-    }
-
-    // Clear FPS counter
-    clearInterval(fpsInterval);
-    fpsBuffer = [];
-    fpsDisplay.textContent = '-';
-    frameSizeDisplay.textContent = '-';
+  if (videoFrameId) {
+    video.cancelVideoFrameCallback(videoFrameId);
+    videoFrameId = null;
+  }
+  video.pause();
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send("STOP");
+  }
+  clearInterval(fpsInterval);
+  fpsDisplay.textContent = '-';
+  frameSizeDisplay.textContent = '-';
 };
 
-connectWebSocket();
+scalingModeSelect.onchange = (e) => {
+  const mode = e.target.value;
+  switch (mode) {
+  case 'letterbox':
+    video.style.objectFit = 'contain';
+    return;
+  case 'crop':
+    video.style.objectFit = 'cover';
+    return;
+  case 'stretch':
+    video.style.objectFit = 'fill';
+    return;
+  default:
+    break;
+  }
+}
+
+// Initial setup
+window.onload = async () => {
+  const success = await fetchSettings();
+  if (success) {
+    fetchBatteryVoltage();
+    setInterval(fetchBatteryVoltage, 60000);
+  }
+  if (!success || apMode) {
+    streamingTabLabel.style.display = 'none';
+    settingsTabRadio.checked = true;
+  } else {
+    connectWebSocket();
+  }
+  document.querySelector('.tabs').style.display = 'flex';
+  splashscreen.style.display = 'none';
+}

@@ -19,6 +19,9 @@ public:
   int getBrightness();
   void setBrightness(int brightness);
 
+  int getOsdLevel();
+  void setOsdLevel(int level);
+
   void onBrightnessChanged(std::function<void(int)> callback);
 
 private:
@@ -29,6 +32,7 @@ private:
   static const char *PREF_SSID;
   static const char *PREF_PASS;
   static const char *PREF_BRIGHTNESS;
+  static const char *PREF_OSD_LEVEL;
 
   String readStringPreference(const char *key, const String &defaultValue = "");
   void writeStringPreference(const char *key, const String &value);
