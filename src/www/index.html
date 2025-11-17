@@ -106,7 +106,8 @@
     .tabs input[type="radio"]:checked+label {
       color: #0c0c0c;
       background-color: var(--main-color);
-      text-shadow: none;
+      text-shadow: 0 0 3px #0c0c0c;
+      box-shadow: 0 0 5px var(--shadow);
     }
 
     .tabs input[type="radio"]:checked+label+.tabcontent {
@@ -147,6 +148,8 @@
       cursor: pointer;
       margin-top: 30px;
       width: 100%;
+      text-shadow: 0 0 3px #0c0c0c;
+      box-shadow: 0 0 5px var(--shadow);
     }
 
     input[type=submit]:hover {
@@ -206,10 +209,11 @@
 
     progress {
       width: 100%;
-      height: 25px;
-      margin-top: 20px;
+      height: 49px;
       -webkit-appearance: none;
       appearance: none;
+      margin: 5px 0;
+      box-shadow: 0 0 5px var(--shadow);
     }
 
     progress::-webkit-progress-bar {
@@ -250,8 +254,8 @@
         <div>
           <label for="videoFile">Select a video file to stream</label>
           <input type="file" id="videoFile" accept="video/*">
-          <button id="startButton">Start Streaming</button>
-          <button id="stopButton">Stop Streaming</button>
+          <button id="startButton" disabled>Start Streaming</button>
+          <button id="stopButton" style="display:none">Stop Streaming</button>
 
           <label for="jpegQuality">JPEG Quality</label>
           <input type="range" id="jpegQuality" min="0.1" max="1.0" step="0.05" value="0.5">

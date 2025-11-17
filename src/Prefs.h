@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <Preferences.h>
+#include "OSD.h"
 #include <functional>
 
 class Prefs
@@ -19,7 +20,7 @@ public:
   int getBrightness();
   void setBrightness(int brightness);
 
-  int getOsdLevel();
+  OSDLevel getOsdLevel();
   void setOsdLevel(int level);
 
   void onBrightnessChanged(std::function<void(int)> callback);

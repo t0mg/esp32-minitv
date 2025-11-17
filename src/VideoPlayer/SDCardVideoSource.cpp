@@ -45,11 +45,11 @@ void SDCardVideoSource::setChannel(int channel)
         return;
     }
     // close any open AVI files
-    if (mCurrentChannelAudioParser)
-    {
-        delete mCurrentChannelAudioParser;
-        mCurrentChannelAudioParser = NULL;
-    }
+    // if (mCurrentChannelAudioParser)
+    // {
+    //     delete mCurrentChannelAudioParser;
+    //     mCurrentChannelAudioParser = NULL;
+    // }
     if (mCurrentChannelVideoParser)
     {
         delete mCurrentChannelVideoParser;
@@ -58,21 +58,21 @@ void SDCardVideoSource::setChannel(int channel)
     // open the AVI file
     std::string aviFilename = mAviFiles[channel];
     Serial.printf("Opening AVI file %s\n", aviFilename.c_str());
-    mCurrentChannelAudioParser = new AVIParser(aviFilename, AVIChunkType::AUDIO);
-    if (!mCurrentChannelAudioParser->open())
-    {
-        Serial.printf("Failed to open AVI file %s\n", aviFilename.c_str());
-        delete mCurrentChannelAudioParser;
-        mCurrentChannelAudioParser = NULL;
-    }
+    // mCurrentChannelAudioParser = new AVIParser(aviFilename, AVIChunkType::AUDIO);
+    // if (!mCurrentChannelAudioParser->open())
+    // {
+    //     Serial.printf("Failed to open AVI file %s\n", aviFilename.c_str());
+    //     delete mCurrentChannelAudioParser;
+    //     mCurrentChannelAudioParser = NULL;
+    // }
     mCurrentChannelVideoParser = new AVIParser(aviFilename, AVIChunkType::VIDEO);
     if (!mCurrentChannelVideoParser->open())
     {
         Serial.printf("Failed to open AVI file %s\n", aviFilename.c_str());
         delete mCurrentChannelVideoParser;
         mCurrentChannelVideoParser = NULL;
-        delete mCurrentChannelAudioParser;
-        mCurrentChannelAudioParser = NULL;
+        // delete mCurrentChannelAudioParser;
+        // mCurrentChannelAudioParser = NULL;
     }
     mChannelNumber = channel;
 }
@@ -124,4 +124,20 @@ bool SDCardVideoSource::getVideoFrame(uint8_t **buffer, size_t &bufferLength, si
     }
     mFrameCount++;
     return true;
+}
+
+const char *SDCardVideoSource::getChannelName()
+{
+    if (mChannelNumber >= 0 && mChannelNumber < mAviFiles.size())
+    {
+        // we just want the filename, not the full path
+        std::string fullPath = mAviFiles[mChannelNumber];
+        size_t lastSlash = fullPath.find_last_of('/');
+        if (lastSlash != std::string::npos)
+        {
+            return fullPath.substr(lastSlash + 1).c_str();
+        }
+        return fullPath.c_str();
+    }
+    return "Unknown";
 }

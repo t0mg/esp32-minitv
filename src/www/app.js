@@ -51,7 +51,7 @@ async function fetchSettings() {
     })
     .catch(error => console.warn('Error fetching settings:', error));
   return success;
-  }
+}
 
 // Save all settings
 settingsForm.addEventListener('submit', (event) => {
@@ -80,6 +80,8 @@ settingsForm.addEventListener('submit', (event) => {
 // OTA update
 updateForm.addEventListener('submit', (event) => {
   event.preventDefault();
+  firmwareFile.disabled = true;
+  firmwareFile.style.display = 'none';
   updateButton.disabled = true;
 
   const file = firmwareFile.files[0];
@@ -107,6 +109,8 @@ updateForm.addEventListener('submit', (event) => {
     } else {
       alert(`Update failed! Server responded with status: ${xhr.status}`);
     }
+    firmwareFile.disabled = false;
+    firmwareFile.style.display = '';
     updateProgress.style.display = 'none';
     updateButton.disabled = false;
   };
@@ -141,6 +145,7 @@ function connectWebSocket() {
     ws = new WebSocket(`ws://${window.location.host}/ws`);
     ws.onopen = () => {
       console.log("WebSocket connection established");
+      startButton.disabled = false;
     };
     ws.onmessage = (event) => {
       if (event.data === "ready") {
@@ -149,16 +154,19 @@ function connectWebSocket() {
     };
     ws.onclose = () => {
       console.log("WebSocket connection closed, retrying...");
+      startButton.disabled = true;
       setTimeout(connectWebSocket, 1000);
     };
     ws.onerror = (error) => console.error("WebSocket error:", error);
   } catch (e) {
     console.warn("WebSocket connection failed.", e);
+    startButton.disabled = true;
   }
 }
 
 videoFile.addEventListener('change', () => {
   const file = videoFile.files[0];
+  stopButton.click();
   if (file) {
     video.src = URL.createObjectURL(file);
   }
@@ -248,6 +256,8 @@ startButton.onclick = () => {
   }, 1000);
   video.play();
   ws.send("START");
+  stopButton.style.display = '';
+  startButton.style.display = 'none';
 };
 
 stopButton.onclick = () => {
@@ -262,22 +272,24 @@ stopButton.onclick = () => {
   clearInterval(fpsInterval);
   fpsDisplay.textContent = '-';
   frameSizeDisplay.textContent = '-';
+  stopButton.style.display = 'none';
+  startButton.style.display = '';
 };
 
 scalingModeSelect.onchange = (e) => {
   const mode = e.target.value;
   switch (mode) {
-  case 'letterbox':
-    video.style.objectFit = 'contain';
-    return;
-  case 'crop':
-    video.style.objectFit = 'cover';
-    return;
-  case 'stretch':
-    video.style.objectFit = 'fill';
-    return;
-  default:
-    break;
+    case 'letterbox':
+      video.style.objectFit = 'contain';
+      return;
+    case 'crop':
+      video.style.objectFit = 'cover';
+      return;
+    case 'stretch':
+      video.style.objectFit = 'fill';
+      return;
+    default:
+      break;
   }
 }
 

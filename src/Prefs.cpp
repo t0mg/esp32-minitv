@@ -60,14 +60,14 @@ void Prefs::onBrightnessChanged(std::function<void(int)> callback)
   brightness_changed_callback = callback;
 }
 
-int Prefs::getOsdLevel()
+OSDLevel Prefs::getOsdLevel()
 {
-  return readIntPreference(PREF_OSD_LEVEL, 1); // Default to standard OSD level
+  return (OSDLevel)readIntPreference(PREF_OSD_LEVEL, 1); // Default to standard OSD level
 }
 
 void Prefs::setOsdLevel(int level)
 {
-  writeIntPreference(PREF_OSD_LEVEL, level);
+  writeIntPreference(PREF_OSD_LEVEL, (int)level);
 }
 
 String Prefs::readStringPreference(const char *key, const String &defaultValue)

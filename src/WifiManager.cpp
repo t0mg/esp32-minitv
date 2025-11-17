@@ -1,9 +1,9 @@
 #include "WifiManager.h"
-#include <ArduinoJson.h>
-#include "AsyncJson.h"
 
+#ifndef STRINGIFY
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
+#endif
 
 // Simple WiFi manager for ESP32 using AsyncWebServer and Preferences
 // Inspired by https://randomnerdtutorials.com/esp32-wi-fi-manager-asyncwebserver/

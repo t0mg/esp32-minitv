@@ -1,13 +1,16 @@
 #pragma once
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
 #include <AsyncTCP.h>
 #include <DNSServer.h>
+#include <Update.h>
 #include "Prefs.h"
 #include "Battery.h"
-#include <Update.h>
+#include "AsyncJson.h"
+#include "OSD.h"
 
 // Embedded files
 extern const uint8_t index_html_start[] asm("_binary_src_www_index_html_start");

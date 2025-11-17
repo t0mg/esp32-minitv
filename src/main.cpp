@@ -16,11 +16,14 @@
 #warning "No DMA - Drawing may be slower"
 #endif
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
 VideoSource *videoSource = NULL;
 VideoPlayer *videoPlayer = NULL;
-Display display;
-Button button(SYS_OUT, SYS_EN);
 Prefs prefs;
+Display display(&prefs);
+Button button(SYS_OUT, SYS_EN);
 AsyncWebServer server(80);
 Battery battery(BATTERY_VOLTAGE_PIN, 3.3, 200000.0, 100000.0);
 WifiManager wifiManager(&server, &prefs, &battery);
@@ -37,6 +40,9 @@ void setup()
   prefs.onBrightnessChanged([](int brightness)
                             { display.setBrightness(brightness); });
   display.setBrightness(prefs.getBrightness());
+  display.drawOSD("ESP32 MiniTV", CENTER, STANDARD);
+  display.drawOSD(TOSTRING(APP_VERSION) " " TOSTRING(APP_BUILD_NUMBER), BOTTOM_RIGHT, DEBUG);
+  display.flushSprite();
   Serial.printf("Total heap: %d\n", ESP.getHeapSize());
   Serial.printf("Free heap: %d\n", ESP.getFreeHeap());
   Serial.printf("Total PSRAM: %d\n", ESP.getPsramSize());
@@ -48,16 +54,17 @@ void setup()
   if (!card->isMounted())
   {
     display.fillScreen(TFT_BLACK);
-    display.drawText("No SD Card", "Initializing WiFi...");
+    display.drawOSD("No SD Card", TOP_LEFT, STANDARD);
+    display.drawOSD("Initializing WiFi...", CENTER, STANDARD);
+    display.flushSprite();
     Serial.println("Failed to mount SD Card. Initializing WifiManager.");
     wifiManager.begin();
     wifiManagerActive = true;
-    Serial.println("");
-    Serial.println("WiFi connected");
-    // TODO: Display IP address on screen. For AP mode, display SSID and preset IP.
     Serial.printf("Wifi Connected: %s\n", wifiManager.getIpAddress().toString().c_str());
     display.fillScreen(TFT_BLACK);
-    display.drawText(wifiManager.isAPMode() ? "AP: " AP_SSID : "WiFi Connected", wifiManager.getIpAddress().toString().c_str());
+    display.drawOSD(wifiManager.isAPMode() ? "AP: " AP_SSID : "WiFi Connected", TOP_LEFT, STANDARD);
+    display.drawOSD(wifiManager.getIpAddress().toString().c_str(), CENTER, STANDARD);
+    display.flushSprite();
     if (!wifiManager.isAPMode())
     {
       videoSource = new StreamVideoSource(&server);
@@ -65,8 +72,10 @@ void setup()
   }
   else
   {
+    display.fillScreen(TFT_BLACK);
     Serial.println("SD Card mounted successfully.");
-    display.drawText("SD Card found !");
+    display.drawOSD("SD Card found !", CENTER, STANDARD);
+    display.flushSprite();
     videoSource = new SDCardVideoSource(card, "/");
   }
 
@@ -74,7 +83,9 @@ void setup()
   {
     videoPlayer = new VideoPlayer(
         videoSource,
-        display);
+        display,
+        prefs,
+        battery);
     videoPlayer->start();
     // get the channel info
     while (!videoSource->fetchChannelData())
