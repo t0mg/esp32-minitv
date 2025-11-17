@@ -24,15 +24,12 @@ public:
   void drawPixels(int x, int y, int width, int height, uint16_t *pixels);
   void drawPixelsToSprite(int x, int y, int width, int height, uint16_t *pixels);
   void flushSprite();
-  void startWrite();
-  void endWrite();
+  void fillSprite(uint16_t color);
   int width();
   int height();
   void fillScreen(uint16_t color);
   void drawOSD(const char *text, OSDPosition position, OSDLevel level);
-  void clearOSD(OSDPosition position);
   void drawSDCardFailed();
-  void dmaWait();
   static uint16_t color565(uint8_t r, uint8_t g, uint8_t b)
   {
     return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);

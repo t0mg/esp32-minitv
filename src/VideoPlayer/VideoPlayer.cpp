@@ -95,8 +95,9 @@ void VideoPlayer::stop()
   mState = VideoPlayerState::STOPPED;
   mVideoSource->setState(VideoPlayerState::STOPPED);
   vTaskDelay(10);
-  mDisplay.fillScreen(DisplayColors::BLACK);
+  mDisplay.fillSprite(DisplayColors::BLACK);
   mDisplay.drawOSD("Stopped", CENTER, OSDLevel::STANDARD);
+  mDisplay.flushSprite();
 }
 
 void VideoPlayer::pause()
@@ -191,15 +192,17 @@ void VideoPlayer::framePlayerTask()
       if (mState == VideoPlayerState::PAUSED)
       {
         redrawFrame();
-      //   drawOSDTimed("Paused", CENTER, OSDLevel::STANDARD);
+        mDisplay.drawOSD("Paused", CENTER, OSDLevel::STANDARD);
       }
-      // else if (mState == VideoPlayerState::STOPPED)
-      // {
-        // mDisplay.clearOSD(_timedOsdPosition);
-      // }
+      else if (mState == VideoPlayerState::STOPPED)
+      {
+        mDisplay.fillSprite(DisplayColors::BLACK);
+        mDisplay.drawOSD("Stopped", CENTER, OSDLevel::STANDARD);
+        mDisplay.flushSprite();
+      }
     }
 
-    if (mState == VideoPlayerState::PAUSED)
+    if (mState == VideoPlayerState::STOPPED)
     {
     //   // draw the paused OSD over the current frame
     //   // drawOSDTimed("Paused", CENTER, OSDLevel::STANDARD);
@@ -224,7 +227,6 @@ void VideoPlayer::framePlayerTask()
       {
         staticBuffer = (uint16_t *)malloc(width * height * 2);
       }
-      mDisplay.startWrite();
       for (int i = 0; i < mDisplay.height(); i++)
       {
         if (!m_runTask)
@@ -238,7 +240,6 @@ void VideoPlayer::framePlayerTask()
         }
         mDisplay.drawPixels(0, i * height, width, height, staticBuffer);
       }
-      mDisplay.endWrite();
       vTaskDelay(50 / portTICK_PERIOD_MS);
       continue;
     }

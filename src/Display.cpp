@@ -82,16 +82,10 @@ void Display::flushSprite()
   xSemaphoreGiveRecursive(tft_mutex);
 }
 
-
-void Display::startWrite()
+void Display::fillSprite(uint16_t color)
 {
   xSemaphoreTakeRecursive(tft_mutex, portMAX_DELAY);
-  tft->startWrite();
-}
-
-void Display::endWrite()
-{
-  tft->endWrite();
+  frameSprite->fillSprite(color);
   xSemaphoreGiveRecursive(tft_mutex);
 }
 
@@ -159,27 +153,4 @@ void Display::drawOSD(const char *text, OSDPosition position, OSDLevel level)
   frameSprite->println(text);
 }
 
-void Display::clearOSD(OSDPosition position)
-{
-  xSemaphoreTakeRecursive(tft_mutex, portMAX_DELAY);
-  int y = 0;
-  // with font 2, size 2, the height is 32
-  int textHeight = 35;
-  switch (position)
-  {
-  case TOP_LEFT:
-  case TOP_RIGHT:
-    y = 20;
-    break;
-  case BOTTOM_LEFT:
-  case BOTTOM_RIGHT:
-    y = height() - textHeight - 20;
-    break;
-  case CENTER:
-    y = (height() - textHeight) / 2;
-    break;
-  }
-  tft->fillRect(0, y, width(), textHeight, TFT_BLACK);
-  xSemaphoreGiveRecursive(tft_mutex);
-}
 
