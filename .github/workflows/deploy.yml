@@ -50,7 +50,7 @@ jobs:
 
           # 3. Create firmware folder and copy files
           mkdir -p dist/firmware
-          cp ../firmware.bin dist/firmware/
+          cp ../firmware/firmware-factory.bin dist/firmware/firmware.bin
           cp firmware/manifest.json dist/firmware/
 
           # 4. Compile README.md into dist/index.html
@@ -66,7 +66,7 @@ jobs:
           cp node_modules/@ffmpeg/util/dist/esm/* dist/ffmpeg-util/
 
       - name: 📤 Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: 'docs/dist'
 
