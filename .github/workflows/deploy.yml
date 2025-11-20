@@ -1,13 +1,14 @@
 name: 🚀 Deploy Docs to Github pages
 
 on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+  workflow_run:
+    workflows: ["Build Firmware"]
+    types:
+      - completed
 
 # Grant permissions for the deployment
 permissions:
+  actions: read
   contents: read
   pages: write
   id-token: write
@@ -15,9 +16,18 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Only run on successful workflow completion
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: ⬇️ Checkout Repository
         uses: actions/checkout@v4
+
+      - name: ⬇️ Download Firmware Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: firmware
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
 
       - name: 🛠️ Setup Node.js
         uses: actions/setup-node@v4
@@ -35,15 +45,21 @@ jobs:
           # 2. Prepare the distribution folder
           mkdir -p dist
           cp transcode.html dist/
+          cp flash.html dist/
           cp *.js dist/
 
-          # 3. Compile README.md into dist/index.html
+          # 3. Create firmware folder and copy files
+          mkdir -p dist/firmware
+          cp ../firmware.bin dist/firmware/
+          cp firmware/manifest.json dist/firmware/
+
+          # 4. Compile README.md into dist/index.html
           npm run md-to-html
           
-          # 4. Copy STL files and images
+          # 5. Copy STL files and images
           cp -r ../stl dist/stl
 
-          # 5. Manually copy the ffmpeg-wasm core files from node_modules/
+          # 6. Manually copy the ffmpeg-wasm core files from node_modules/
           mkdir -p dist/ffmpeg
           mkdir -p dist/ffmpeg-util
           cp node_modules/@ffmpeg/ffmpeg/dist/esm/* dist/ffmpeg/
