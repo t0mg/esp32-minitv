@@ -51,6 +51,10 @@ void VideoPlayer::setChannel(int channel)
 
 void VideoPlayer::nextChannel()
 {
+  if (mState == VideoPlayerState::PAUSED)
+  {
+    play();
+  }
   m_runTask = false;
   // wait for the task to stop
   while (_framePlayerTaskHandle != NULL)
@@ -58,10 +62,6 @@ void VideoPlayer::nextChannel()
     vTaskDelay(10);
   }
   mVideoSource->nextChannel();
-  if (mState == VideoPlayerState::PAUSED)
-  {
-    play();
-  }
   drawOSDTimed(mVideoSource->getChannelName(), TOP_LEFT, OSDLevel::STANDARD);
   playTask();
 }
