@@ -6,9 +6,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128250;</text></svg>">
+  <link rel="stylesheet" href="https://fonts.xz.style/serve/inter.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
 </head>
 
 <body>
+  <a href="index.html">&larr; Back to Tinytron project</a>
+  <h1>Tinytron transcoder</h1>
+
+  <p>This tool is part of the <a href="index.html">Tinytron project</a> and transcodes video files into a format compatible with the device. Please be aware that the output file size is limited to 2GB. For larger files or much faster conversions, we recommend using the command-line version of <a href="https://ffmpeg.org/">ffmpeg</a> directly.</p>
+
   <label for="videoFile">Select a video file to transcode</label>
   <input type="file" id="transcodeVideoFile" accept="video/*">
   <button id="transcodeButton" disabled>Transcode</button>
