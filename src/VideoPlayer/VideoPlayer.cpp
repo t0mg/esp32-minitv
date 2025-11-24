@@ -145,7 +145,7 @@ void VideoPlayer::playStatic()
   mState = VideoPlayerState::STATIC;
   mVideoSource->setState(VideoPlayerState::STATIC);
 
-  mDisplay.fillScreen(DisplayColors::BLACK); // Added to reset display state
+  mDisplay.fillScreen(DisplayColors::BLACK);
 
   // Start the task in STATIC mode
   playTask();
@@ -158,7 +158,12 @@ int dmaBufferIndex = 0;
 int _doDraw(JPEGDRAW *pDraw)
 {
   VideoPlayer *player = (VideoPlayer *)pDraw->pUser;
-  player->mDisplay.drawPixelsToSprite(pDraw->x, pDraw->y, pDraw->iWidth, pDraw->iHeight, pDraw->pPixels);
+  // calculate the x offset to center the image if encoded at 288 pixels for faster JPEG decoding
+  int x_offset = 0;
+  int imageWidth = player->mJpeg.getWidth();
+  int screenWidth = player->mDisplay.width();
+  x_offset = (screenWidth - imageWidth) / 2;
+  player->mDisplay.drawPixelsToSprite(pDraw->x + x_offset, pDraw->y, pDraw->iWidth, pDraw->iHeight, pDraw->pPixels);
   return 1;
 }
 
