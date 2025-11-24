@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     downloadLink.style.display = 'none';
 
     try {
-      transcodeStatus.textContent = 'Detecting source framerate...';
+      transcodeStatus.textContent = '\nDetecting source framerate...';
       await ffmpeg.writeFile('input.mp4', new Uint8Array(await file.arrayBuffer()));
 
       // FIX 1: Use exec with array, and ignore the inevitable error
@@ -74,10 +74,9 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Probe finished (expected error ignored)');
       }
 
-      transcodeStatus.textContent = `Found ${detectedFps} FPS.`;
       const targetFps = Math.min(detectedFps, 25);
-
-      transcodeStatus.textContent += ` Transcoding at ${targetFps} FPS...`;
+      transcodeStatus.textContent += `\nFound ${detectedFps} FPS. Output will target ${targetFps} FPS.`;
+      transcodeStatus.textContent += `\nTranscoding...`;
 
       const command = [
         '-y',
@@ -99,10 +98,10 @@ document.addEventListener('DOMContentLoaded', () => {
       downloadLink.href = url;
       downloadLink.download = 'out.avi';
       downloadLink.style.display = 'block';
-      transcodeStatus.textContent = 'Transcoding complete!';
+      transcodeStatus.textContent += '\nTranscoding complete!';
     } catch (err) {
       console.error(err);
-      transcodeStatus.textContent = 'Error during transcoding (check console).';
+      transcodeStatus.textContent += '\nError during transcoding (check console).';
     } finally {
       // Cleanup UI
       transcodeVideoFile.disabled = false;
@@ -117,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
   cancelButton.addEventListener('click', () => {
     if (ffmpeg) {
       ffmpeg.terminate(); // Kills the worker
-      transcodeStatus.textContent = 'Transcoding cancelled. Reloading FFmpeg...';
+      transcodeStatus.textContent += '\nTranscoding cancelled. Reloading FFmpeg...';
 
       // Clean up UI immediately
       transcodeProgress.style.display = 'none';
