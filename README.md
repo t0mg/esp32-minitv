@@ -44,7 +44,7 @@ One of this project's goals is to keep the BOM as short as possible. Only 3 part
 
 The case design is inspired by late 90's TV/VCR combos like the Sony KV-14V6D. It was made with OnShape and has 4 parts: front, back, bezel and button. Glue is required to stick the bezel to the front part, the rest of the assembly snap fits (with pretty tight tolerances). Printing the parts separately allows for interesting color combinations.
 
-<p class="flex"><img src="assets/cad.png" title="Assembled case"><img src="assets/exploded.png" title=">Exploded case"></p>
+<p class="flex"><img src="assets/cad.png" title="Assembled case"><img src="assets/exploded.png" title="Exploded case"></p>
 
 #### Printing instructions
 
