@@ -1,6 +1,4 @@
-<p class="mdOnly">
-<h1>Tinytron 📺</h1>
-</p>
+<p class="mdOnly"><h1>Tinytron 📺</h1></p>
 
 ## 📋 Overview
 
