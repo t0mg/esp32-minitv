@@ -81,7 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const targetFps = Math.min(detectedFps, 25);
       log(`Found ${detectedFps} FPS.${detectedFps > targetFps ? ` Output will be capped at ${targetFps} FPS to reduce file size` : ''}`);
-      log(`Transcoding...`);
 
       const command = [
         '-y',
@@ -92,6 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
         '-vf', `scale=-1:240:flags=lanczos,crop=288:240:(in_w-288)/2:0,fps=${targetFps}`,
         'out.avi'
       ];
+
+      log(`Running command: ffmpeg ${command.join(' ')}`);
+      log(`Transcoding...`);
 
       await ffmpeg.exec(command);
 
