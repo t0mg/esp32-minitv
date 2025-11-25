@@ -95,7 +95,7 @@ void WifiManager::setupCommonRoutes()
     request->send(200, "application/json", response); });
 
   AsyncCallbackJsonWebHandler *handler = new AsyncCallbackJsonWebHandler("/settings", [this](AsyncWebServerRequest *request, JsonVariant &json)
-                                                                          {
+                                                                         {
     JsonObject jsonObj = json.as<JsonObject>();
     bool restartRequired = false;
 
@@ -122,12 +122,8 @@ void WifiManager::setupCommonRoutes()
   server->addHandler(handler);
 
   // OTA update endpoint
-  server->on("/update", HTTP_POST, [](AsyncWebServerRequest *request) {
-    AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
-    response->addHeader("Connection", "close");
-    request->send(response);
-    ESP.restart();
-  }, [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
+  server->on("/update", HTTP_POST, [](AsyncWebServerRequest *request) {}, [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final)
+             {
     if (index == 0) {
       Serial.printf("Update Start: %s\n", filename.c_str());
       if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
@@ -145,8 +141,12 @@ void WifiManager::setupCommonRoutes()
       } else {
         Update.printError(Serial);
       }
-    }
-  });
+      AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+      response->addHeader("Connection", "close");
+      request->send(response);
+      delay(200);
+      ESP.restart();
+    } });
 }
 
 void WifiManager::setupServer()
@@ -199,7 +199,7 @@ bool WifiManager::isAPMode()
 {
   wifi_mode_t mode = WiFi.getMode();
   return (mode == WIFI_AP || mode == WIFI_AP_STA);
-} 
+}
 
 IPAddress WifiManager::getIpAddress()
 {
