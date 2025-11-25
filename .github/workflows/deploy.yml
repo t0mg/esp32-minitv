@@ -72,6 +72,7 @@ jobs:
           mkdir -p dist/ffmpeg-util
           cp node_modules/@ffmpeg/ffmpeg/dist/esm/* dist/ffmpeg/
           cp node_modules/@ffmpeg/util/dist/esm/* dist/ffmpeg-util/
+          cp node_modules/coi-serviceworker/coi-serviceworker.js dist/
 
       - name: 📤 Upload Pages Artifact
         uses: actions/upload-pages-artifact@v4
