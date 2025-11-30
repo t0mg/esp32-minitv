@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Tinytron screen streamer 📺</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128250;</text></svg>">
+  <link rel="stylesheet" href="https://fonts.xz.style/serve/inter.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
+  <style>
+    video, #previewImage {
+      width: 100%;
+      max-width: 288px;
+      height: 240px;
+      border: 1px solid #ccc;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+  </style>
+</head>
+
+<body>
+  <a href="index.html">&larr; Back to Tinytron project</a>
+  <h1>Tinytron screen streamer 📺</h1>
+
+  <p>This tool is part of the <a href="index.html">Tinytron project</a> and allows you to stream your screen directly to the device.</p>
+  <p>You will need to enter the IP address of your device below. This page cannot auto-detect it.</p>
+
+  <fieldset>
+    <legend>Connection</legend>
+    <label for="deviceIp">Device IP address</label>
+    <input type="text" id="deviceIp" placeholder="e.g. 192.168.1.123">
+  </fieldset>
+
+  <p class="flex">
+    <button id="startButton">📺 Start Streaming</button>
+    <button id="stopButton" style="display: none;">🛑 Stop Streaming</button>
+  </p>
+  <div class="grid">
+    <div>
+      <p><b>Live preview</b></p>
+      <video id="video" autoplay muted></video>
+    </div>
+    <div>
+      <p><b>Device preview</b></p>
+      <img id="previewImage" />
+    </div>
+  </div>
+  <p>
+    FPS: <span id="fpsDisplay">-</span>,
+    Frame size: <span id="frameSizeDisplay">-</span>
+  </p>
+
+  <script src="stream.js"></script>
+  <script src="screen.js"></script>
+</body>
+
+</html>

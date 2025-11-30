@@ -26,12 +26,8 @@ const updateProgress = document.getElementById('updateProgress');
 const firmwareVersion = document.getElementById('firmwareVersion');
 const firmwareBuild = document.getElementById('firmwareBuild');
 
-let ws;
-let videoFrameId;
-let fpsInterval;
-let lastFrameTime;
-let frameTimeBuffer;
 let apMode = false;
+let streamer;
 
 // Fetch all settings from the server
 async function fetchSettings() {
@@ -160,139 +156,44 @@ function fetchBatteryStatus() {
     .catch(error => console.error('Error fetching battery status:', error));
 }
 
-// WebSocket connection
-function connectWebSocket() {
-  try {
-    ws = new WebSocket(`ws://${window.location.host}/ws`);
-    ws.onopen = () => {
-      console.log("WebSocket connection established");
-      startButton.disabled = false;
-    };
-    ws.onmessage = (event) => {
-      if (event.data === "ready") {
-        video.requestVideoFrameCallback(sendFrame);
-      }
-    };
-    ws.onclose = () => {
-      console.log("WebSocket connection closed, retrying...");
-      startButton.disabled = true;
-      setTimeout(connectWebSocket, 1000);
-    };
-    ws.onerror = (error) => console.error("WebSocket error:", error);
-  } catch (e) {
-    console.warn("WebSocket connection failed.", e);
-    startButton.disabled = true;
+jpegQualitySlider.addEventListener('input', (e) => {
+  if (streamer) {
+    const quality = e.target.value;
+    streamer.jpegQuality = quality;
   }
-}
+});
+
+scalingModeSelect.addEventListener('input', (e) => {
+  if (streamer) {
+    const mode = e.target.value;
+    streamer.scalingMode = mode;
+  }
+});
 
 videoFile.addEventListener('change', () => {
   const file = videoFile.files[0];
-  stopButton.click();
+  if (streamer) {
+    streamer.stop();
+  }
   if (file) {
     video.src = URL.createObjectURL(file);
   }
 });
-
-function sendFrame() {
-  if (video.paused || video.ended) {
-    return;
-  }
-
-  const jpegQuality = parseFloat(jpegQualitySlider.value);
-  const scalingMode = scalingModeSelect.value;
-  const canvas = document.createElement('canvas');
-  canvas.width = 288;
-  canvas.height = 240;
-  const context = canvas.getContext('2d');
-  const videoAspectRatio = video.videoWidth / video.videoHeight;
-  const canvasAspectRatio = canvas.width / canvas.height;
-  let sx = 0, sy = 0, sWidth = video.videoWidth, sHeight = video.videoHeight;
-  let dx = 0, dy = 0, dWidth = canvas.width, dHeight = canvas.height;
-
-  if (scalingMode === 'letterbox') {
-    if (videoAspectRatio > canvasAspectRatio) {
-      dHeight = canvas.width / videoAspectRatio;
-      dy = (canvas.height - dHeight) / 2;
-    } else {
-      dWidth = canvas.height * videoAspectRatio;
-      dx = (canvas.width - dWidth) / 2;
-    }
-    context.fillStyle = 'black';
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(video, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
-  } else if (scalingMode === 'crop') {
-    if (videoAspectRatio > canvasAspectRatio) {
-      sWidth = video.videoHeight * canvasAspectRatio;
-      sx = (video.videoWidth - sWidth) / 2;
-    } else {
-      sHeight = video.videoWidth / canvasAspectRatio;
-      sy = (video.videoHeight - sHeight) / 2;
-    }
-    context.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
-  } else { // stretch
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-  }
-
-  canvas.toBlob(blob => {
-    if (blob) {
-      const now = performance.now();
-      if (lastFrameTime) {
-        const frameTime = now - lastFrameTime;
-        if (frameTime > 0 && frameTime < 1000) {
-          frameTimeBuffer.push(frameTime);
-        }
-      }
-      lastFrameTime = now;
-      frameSizeDisplay.textContent = blob.size;
-      const imageUrl = URL.createObjectURL(blob);
-      previewImage.src = imageUrl;
-      previewImage.onload = () => URL.revokeObjectURL(imageUrl);
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(blob);
-      }
-    }
-  }, 'image/jpeg', jpegQuality);
-}
 
 startButton.onclick = () => {
   if (!video.src) {
     alert("Please select a video file first.");
     return;
   }
-  if (!ws || ws.readyState !== WebSocket.OPEN) {
-    alert("WebSocket is not connected. Please wait.");
-    return;
-  }
-  lastFrameTime = performance.now();
-  frameTimeBuffer = [];
-  fpsInterval = setInterval(() => {
-    if (frameTimeBuffer && frameTimeBuffer.length > 0) {
-      const avgInterval = frameTimeBuffer.reduce((a, b) => a + b) / frameTimeBuffer.length;
-      const currentFps = 1000 / avgInterval;
-      fpsDisplay.textContent = currentFps.toFixed(1);
-      frameTimeBuffer = [];
-    } else {
-      fpsDisplay.textContent = '0.0';
-    }
-  }, 1000);
-  video.play();
-  ws.send("START");
+  streamer.start();
   stopButton.style.display = '';
   startButton.style.display = 'none';
 };
 
 stopButton.onclick = () => {
-  if (videoFrameId) {
-    video.cancelVideoFrameCallback(videoFrameId);
-    videoFrameId = null;
+  if (streamer) {
+    streamer.stop();
   }
-  video.pause();
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send("STOP");
-  }
-  clearInterval(fpsInterval);
-  fpsDisplay.textContent = '-';
-  frameSizeDisplay.textContent = '-';
   stopButton.style.display = 'none';
   startButton.style.display = '';
 };
@@ -337,7 +238,14 @@ window.onload = async () => {
     streamingTabLabel.style.display = 'none';
     settingsTabRadio.checked = true;
   } else {
-    connectWebSocket();
+    const onFpsUpdate = (fps) => { fpsDisplay.textContent = fps === null ? '-' : `${fps}`; };
+    const onFrameSizeUpdate = (frameSize) => {
+      frameSizeDisplay.textContent = frameSize === null ? '-' : `${frameSize}`;
+    };
+    streamer = new Streamer(video, previewImage, onFpsUpdate, onFrameSizeUpdate);
+    streamer.connectWebSocket(null, () => {
+      startButton.disabled = false;
+    });
   }
   document.querySelector('.tabs').style.display = 'flex';
   splashscreen.style.display = 'none';

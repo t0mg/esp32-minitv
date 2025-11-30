@@ -79,6 +79,10 @@ void WifiManager::setupCommonRoutes()
              {
               // DO NOT remove the -1 below, it is to avoid sending an extra null byte at the end
               request->send(200, "application/javascript; charset=utf-8", app_js_start, app_js_end - app_js_start - 1); });
+  server->on("/stream.js", HTTP_GET, [](AsyncWebServerRequest *request)
+             {
+              // DO NOT remove the -1 below, it is to avoid sending an extra null byte at the end
+              request->send(200, "application/javascript; charset=utf-8", stream_js_start, stream_js_end - stream_js_start - 1); });
 
   server->on("/settings", HTTP_GET, [this](AsyncWebServerRequest *request)
              {
