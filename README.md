@@ -115,7 +115,7 @@ The first step is to glue the bezel on the front piece. If you aren't confident 
 
 The rest of the assembly requires no glue nor any tool and takes about 3 minutes, but please **DO READ THE ADVICE BELOW VERY CAREFULLY BEFORE PROCEEDING**.
 
-**⚠️ Warning:** The tolerances are very tight, **be gentle when manipulating the display or you might break it** (trust me, I know). Watch the video and respect the insertion order of the display. 
+**⚠️ Warning:** The tolerances are very tight, **be gentle when manipulating the display or you might break it** (trust me, I know). Watch the video and respect the insertion order of the display.
 
 Assembly is quick, but there are 4 points to be pay attention to:
 
@@ -241,17 +241,30 @@ The web interface allows you to:
 - Adjust screen brightness and On-Screen Display (OSD) level.
 - Set an auto-shutdown timer.
 - View battery status.
-- Stream local video files from your computer to the device.
+- Stream local video files, or mirror your screen from your computer to the device (read details below).
 - Perform [Over-the-Air (OTA) firmware updates](#over-the-air-updates).
+
+<p class="flex"><img src="assets/streaming.png" title="Streaming tab, Screen Mirroring mode (CHARGE by Blender Studio, CC BY 4.0)"><img src="assets/settings.png" style="max-height:320px" title="Settings tab"></p>
+
+#### Screen mirorring
+
+Because the ESP32 on the Tinytron is only capable of insecure connections, and screen mirroring requires https, your browser will (rightfully) block this streaming mode.
+
+There's a workaround, but it comes with a caveats: for this mode to work, you will need to enable the *Insecure origins treated as secure* flag in your desktop Chrome browser to allow your browser to access screen sharing and to stream it via an insecure and WebSocket connection to your Tinytron. Note that this does not work on mobile.
+
+**⚠️ Warning:** This browser flag is a security risk, and should only be enabled on a trusted network. **If you don't understand what this means, or are uncomfortable with doing it, please do not proceed further.** There are several other ways to play videos on Tinytron!
+
+🧪 To enable the flag:
+  - Open a new tab then enter `chrome://flags/#unsafely-treat-insecure-origin-as-secure` in the address bar.
+  - Add the IP address of the device twice, prefixed with `http://` (to access the screen sharing) and `ws://` (to stream it to the Tinytron), e.g. `http://192.168.1.123, ws://192.168.1.123`.
+  - Enable the flag via the dropdown menu next to it.
+  - Restart Chrome and return to the Tinytron's Web UI. Mirroring feature should now work.
 
 ### Battery & charging
 
 - Power consumption varies depending on usage (WiFi, brightness). In medium brightness and SD mode it can last several hours. The battery state is visible in the Web interface, as wekk as on the display if enabled in settings.
 - When the battery is low, a warning appears both in the Web interface and on the display.
 - The device charges over USB C. It currently cannot be turned off while charging.
-
-## 🧪 Experimental features
-- [Live stream a computer screen to Tinytron](https://t0mg.github.io/tinytron/screen.html) : This quick proof of concept page requires a desktop computer running Chrome and a few extra steps to enable insecure WebSocket connections. Also, this is currently much less stable than video file streaming for some reason, expect crashes.
 
 ## 🫰 Credits and references
 - Tinytron is relying heavily on [esp32-tv by atomic14](https://github.com/atomic14/esp32-tv) and the related [blog](http://www.atomic14.com) and [videos](https://www.youtube.com/atomic14). Many thanks !

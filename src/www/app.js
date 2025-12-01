@@ -25,6 +25,10 @@ const firmwareFile = document.getElementById('firmwareFile');
 const updateProgress = document.getElementById('updateProgress');
 const firmwareVersion = document.getElementById('firmwareVersion');
 const firmwareBuild = document.getElementById('firmwareBuild');
+const videoSourceSelect = document.getElementById('videoSource');
+const screenStreamOptions = document.getElementById('screenStreamOptions');
+const fileStreamOptions = document.getElementById('fileStreamOptions');
+const selectScreenButton = document.getElementById('selectScreenButton');
 
 let apMode = false;
 let streamer;
@@ -156,6 +160,28 @@ function fetchBatteryStatus() {
     .catch(error => console.error('Error fetching battery status:', error));
 }
 
+function clearVideoSource() {
+  if (video.srcObject) {
+    video.srcObject.getTracks().forEach(track => track.stop());
+    video.srcObject = null;
+  } else if (video.src) {
+    video.src = '';
+  }
+}
+
+let source = 'screen';
+videoSourceSelect.addEventListener('change', (e) => {
+  source = e.target.value;
+  clearVideoSource();
+  if (source === 'screen') {
+    screenStreamOptions.style.display = '';
+    fileStreamOptions.style.display = 'none';
+  } else if (source === 'file') {
+    screenStreamOptions.style.display = 'none';
+    fileStreamOptions.style.display = '';
+  }
+});
+
 jpegQualitySlider.addEventListener('input', (e) => {
   if (streamer) {
     const quality = e.target.value;
@@ -180,14 +206,26 @@ videoFile.addEventListener('change', () => {
   }
 });
 
+selectScreenButton.onclick = async () => {
+  try {
+  const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+  video.srcObject = stream;
+  video.play();
+  } catch (error) {
+    console.error('Error accessing screen:', error);
+    alert('Failed to access screen. Please read the documentation about enabling insecure connections.');
+  } 
+};
+
 startButton.onclick = () => {
-  if (!video.src) {
-    alert("Please select a video file first.");
+  if (!video.src && !video.srcObject) {
+    alert("Please select a video source first.");
     return;
   }
   streamer.start();
   stopButton.style.display = '';
   startButton.style.display = 'none';
+  videoSourceSelect.disabled = true;
 };
 
 stopButton.onclick = () => {
@@ -196,6 +234,7 @@ stopButton.onclick = () => {
   }
   stopButton.style.display = 'none';
   startButton.style.display = '';
+  videoSourceSelect.disabled = false;
 };
 
 scalingModeSelect.onchange = (e) => {
@@ -245,6 +284,9 @@ window.onload = async () => {
     streamer = new Streamer(video, previewImage, onFpsUpdate, onFrameSizeUpdate);
     streamer.connectWebSocket(null, () => {
       startButton.disabled = false;
+    }, (error) => {
+      startButton.disabled = true;
+      videoSourceSelect.disabled = false;
     });
   }
   document.querySelector('.tabs').style.display = 'flex';

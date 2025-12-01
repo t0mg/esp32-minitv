@@ -249,7 +249,15 @@
       font-size: 1.25em;
       text-transform: uppercase;
       text-align: center;
-      animation: blink 2s cubic-bezier(0.96, 0.38, 0, 0.54) infinite    }
+      animation: blink 2s cubic-bezier(0.96, 0.38, 0, 0.54) infinite;
+    }
+
+    fieldset {
+      border: none;
+      border-bottom: 2px solid var(--main-color);
+      margin: -10px 0 20px 0;
+      padding: 0px 0 10px 20px;
+    }
 
     @keyframes blink {
       100% {
@@ -283,8 +291,22 @@
       <label for="tab-streaming" id="streamingTabLabel">Video Streaming</label>
       <div class="tabcontent">
         <div>
-          <label for="videoFile">Select a video file to stream</label>
-          <input type="file" id="videoFile" accept="video/*">
+          <label for="videoSource">Video Source</label>
+          <select id="videoSource">
+            <option value="file">Local file</option>
+            <option value="screen">Screen Mirroring</option>
+          </select>
+
+          <fieldset id="fileStreamOptions">
+            <label for="videoFile">Select a video file to stream</label>
+            <input type="file" id="videoFile" accept="video/*">
+          </fieldset>
+
+          <fieldset id="screenStreamOptions" style="display: none;">
+            <label for="selectScreenButton">Select target screen or window</label>
+            <button id="selectScreenButton">Select Screen</button>
+          </fieldset>
+
           <button id="startButton" disabled>Start Streaming</button>
           <button id="stopButton" style="display:none">Stop Streaming</button>
 
