@@ -10,7 +10,7 @@ It can play MJPEG files from a microSD card, or stream video content from a comp
 
 <p class="mdOnly">Watch a demo video on YouTube:</p>
 
-https://www.youtube.com/watch?v=IA2hCkSuGbk
+https://www.youtube.com/watch?v=HspYfg55T3A
 
 ### Project goals
 
