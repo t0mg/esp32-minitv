@@ -26,6 +26,9 @@ public:
   int getTimerMinutes();
   void setTimerMinutes(int minutes);
 
+  int getBoardRevision();
+  void setBoardRevision(int revision);
+
   void onBrightnessChanged(std::function<void(int)> callback);
   void onTimerMinutesChanged(std::function<void(int)> callback);
 
@@ -40,6 +43,7 @@ private:
   static const char *PREF_BRIGHTNESS;
   static const char *PREF_OSD_LEVEL;
   static const char *PREF_TIMER_MINUTES;
+  static const char *PREF_BOARD_REVISION;
 
   String readStringPreference(const char *key, const String &defaultValue = "");
   void writeStringPreference(const char *key, const String &value);
