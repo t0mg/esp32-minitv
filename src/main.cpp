@@ -23,7 +23,7 @@ VideoSource *videoSource = NULL;
 VideoPlayer *videoPlayer = NULL;
 Prefs prefs;
 Display display(&prefs);
-Button button(SYS_OUT, SYS_EN);
+Button *button = NULL;
 AsyncWebServer server(80);
 Battery battery(BATTERY_VOLTAGE_PIN, 3.3, 200000.0, 100000.0);
 unsigned long shutdown_time = 0;
@@ -65,6 +65,22 @@ void setup()
   Serial.printf("Free heap: %d\n", ESP.getFreeHeap());
   Serial.printf("Total PSRAM: %d\n", ESP.getPsramSize());
   Serial.printf("Free PSRAM: %d\n", ESP.getFreePsram());
+
+  // Initialize button based on board revision
+  int boardRevision = prefs.getBoardRevision();
+  int pin_sys_out, pin_sys_en;
+
+  if (boardRevision == 1) {
+    // V1 Pins
+    pin_sys_en = 35;
+    pin_sys_out = 36;
+  } else {
+    // V2 Pins (Default)
+    pin_sys_en = 41;
+    pin_sys_out = 40;
+  }
+
+  button = new Button(pin_sys_out, pin_sys_en);
 
   Serial.println("Looking for SD Card");
   SDCard *card = new SDCard(SD_CARD_MISO, SD_CARD_MOSI, SD_CARD_CLK, SD_CARD_CS);
@@ -117,7 +133,7 @@ void setup()
     videoPlayer->play();
   }
   // reset the button state
-  button.reset();
+  if (button) button->reset();
 }
 
 unsigned long lastBatteryUpdate = 0;
@@ -137,7 +153,7 @@ void loop()
     display.drawOSD("Time out!", CENTER, STANDARD);
     display.flushSprite();
     delay(5000);
-    button.powerOff();
+    if (button) button->powerOff();
   }
   if (now - lastBatteryUpdate > 10000)
   {
@@ -145,7 +161,7 @@ void loop()
     lastBatteryUpdate = now;
   }
 
-  button.update();
+  if (button) button->update();
   if (wifiManagerActive)
   {
     wifiManager.handleClient();
@@ -153,7 +169,7 @@ void loop()
 
   if (!wifiManagerActive)
   {
-    if (button.isClicked())
+    if (button && button->isClicked())
     {
       if (videoPlayer != nullptr)
       {
@@ -161,7 +177,7 @@ void loop()
       }
     }
 
-    if (button.isDoubleClicked())
+    if (button && button->isDoubleClicked())
     {
       if (videoPlayer != nullptr)
       {
