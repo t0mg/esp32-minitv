@@ -8,6 +8,10 @@ Button::Button(int pin, int sys_en_pin)
   pinMode(_sys_en_pin, OUTPUT);
   digitalWrite(_sys_en_pin, HIGH);
 
+  // Also drive the button pin high if it serves as SYS_OUT (Latch)
+  pinMode(_pin, OUTPUT);
+  digitalWrite(_pin, HIGH);
+
   debounceDelay = 50;
   clickInterval = 500;
   longPressDuration = 1000;
@@ -20,10 +24,8 @@ void Button::reset()
   clickDetected = false;
   doubleClickDetected = false;
   clickCount = 0;
-  // read initial state
   lastButtonState = digitalRead(_pin);
   buttonState = lastButtonState;
-  // important to avoid false triggers
   lastClickTime = millis();
   lastDebounceTime = millis();
 }
@@ -108,4 +110,6 @@ bool Button::isDoubleClicked()
 void Button::powerOff()
 {
   digitalWrite(_sys_en_pin, LOW);
+  digitalWrite(_pin, LOW);
+  esp_deep_sleep_start();
 }

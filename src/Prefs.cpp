@@ -6,8 +6,9 @@ const char *Prefs::PREF_PASS = "pass";
 const char *Prefs::PREF_BRIGHTNESS = "brightness";
 const char *Prefs::PREF_OSD_LEVEL = "osd_level";
 const char *Prefs::PREF_TIMER_MINUTES = "timer_minutes";
+const char *Prefs::PREF_BOARD_REVISION = "boardRev";
 
-Prefs::Prefs() {}
+Prefs::Prefs() : brightness_changed_callback(nullptr), timer_minutes_changed_callback(nullptr) {}
 
 void Prefs::begin()
 {
@@ -89,6 +90,16 @@ void Prefs::setTimerMinutes(int minutes)
 void Prefs::onTimerMinutesChanged(std::function<void(int)> callback)
 {
   timer_minutes_changed_callback = callback;
+}
+
+int Prefs::getBoardRevision()
+{
+  return readIntPreference(PREF_BOARD_REVISION, 2);
+}
+
+void Prefs::setBoardRevision(int revision)
+{
+  writeIntPreference(PREF_BOARD_REVISION, revision);
 }
 
 String Prefs::readStringPreference(const char *key, const String &defaultValue)
