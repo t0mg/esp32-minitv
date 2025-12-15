@@ -34,6 +34,10 @@ unsigned long shutdown_time = 0;
 WifiManager wifiManager(&server, &prefs, &battery);
 bool wifiManagerActive = false;
 
+enum class PlaybackMode { VIDEO_ONLY, IMAGE_ONLY, VIDEO_THEN_IMAGES };
+PlaybackMode playbackMode = PlaybackMode::VIDEO_ONLY;
+bool videoActive = false;
+
 void setShutdownTime(int minutes) {
   if (minutes > 0) {
     shutdown_time = millis() + minutes * 60 * 1000;
@@ -99,12 +103,13 @@ void setup() {
       videoSource = videoCandidate;
     } else {
       delete videoCandidate;
-      ImageSource *imageCandidate = new SDCardImageSource(card, "/", false);
-      if (imageCandidate->fetchImageData()) {
-        imageSource = imageCandidate;
-      } else {
-        delete imageCandidate;
-      }
+    }
+
+    ImageSource *imageCandidate = new SDCardImageSource(card, "/", false);
+    if (imageCandidate->fetchImageData()) {
+      imageSource = imageCandidate;
+    } else {
+      delete imageCandidate;
     }
   }
 
@@ -118,7 +123,9 @@ void setup() {
     videoPlayer->setChannel(0);
     delay(500);
     videoPlayer->play();
-  } else if (imageSource != nullptr) {
+  }
+
+  if (imageSource != nullptr) {
     imagePlayer = new ImagePlayer(imageSource, display, prefs, battery);
     imagePlayer->start();
     while (!imageSource->fetchImageData()) {
@@ -127,7 +134,20 @@ void setup() {
     }
     imagePlayer->setImage(0);
     delay(500);
-    imagePlayer->play();
+    if (videoSource == nullptr) {
+      imagePlayer->play();
+    }
+  }
+
+  if (videoSource != nullptr && imageSource != nullptr) {
+    playbackMode = PlaybackMode::VIDEO_THEN_IMAGES;
+    videoActive = true;
+  } else if (videoSource != nullptr) {
+    playbackMode = PlaybackMode::VIDEO_ONLY;
+    videoActive = true;
+  } else if (imageSource != nullptr) {
+    playbackMode = PlaybackMode::IMAGE_ONLY;
+    videoActive = false;
   }
   // reset the button state
   button.reset();
@@ -163,6 +183,48 @@ void loop() {
   }
 
   if (!wifiManagerActive) {
+    if (playbackMode == PlaybackMode::VIDEO_THEN_IMAGES) {
+      if (videoActive) {
+        SDCardVideoSource *sdVideoSource = (SDCardVideoSource *)videoSource;
+        if (sdVideoSource != nullptr && sdVideoSource->consumeWrapped()) {
+          if (videoPlayer != nullptr) {
+            videoPlayer->stop();
+          }
+          if (imagePlayer != nullptr) {
+            SDCardImageSource *sdImageSource = (SDCardImageSource *)imageSource;
+            if (sdImageSource != nullptr) {
+              // Prevent immediate bounce-back if image source still has a stale
+              // wrapped flag from a previous cycle.
+              sdImageSource->consumeWrapped();
+            }
+            imagePlayer->setImage(0);
+            delay(50);
+            imagePlayer->play();
+          }
+          videoActive = false;
+        }
+      } else {
+        SDCardImageSource *sdImageSource = (SDCardImageSource *)imageSource;
+        if (sdImageSource != nullptr && sdImageSource->consumeWrapped()) {
+          if (imagePlayer != nullptr) {
+            imagePlayer->stop();
+          }
+          if (videoPlayer != nullptr) {
+            SDCardVideoSource *sdVideoSource = (SDCardVideoSource *)videoSource;
+            if (sdVideoSource != nullptr) {
+              // Prevent immediate bounce-back if video source still has a stale
+              // wrapped flag from a previous cycle.
+              sdVideoSource->consumeWrapped();
+            }
+            videoPlayer->setChannel(0);
+            delay(50);
+            videoPlayer->play();
+          }
+          videoActive = true;
+        }
+      }
+    }
+
     if (button.isClicked()) {
       if (videoPlayer != nullptr) {
         videoPlayer->playPauseToggle();

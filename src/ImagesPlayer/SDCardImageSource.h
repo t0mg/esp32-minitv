@@ -17,6 +17,7 @@ private:
   unsigned long mLastChangeTime = 0;
   unsigned long mIntervalMs = 5000;
   bool mForceNext = true;
+  volatile bool mWrapped = false;
 
   bool loadCurrentImage(uint8_t **buffer, size_t &bufferLength,
                         size_t &frameLength);
@@ -33,4 +34,9 @@ public:
                      size_t &frameLength) override;
   uint32_t getAutoAdvanceIntervalMs() override { return (uint32_t)mIntervalMs; }
   bool showImageNameOSD() override { return mShowFilename; }
+  bool consumeWrapped() {
+    bool wrapped = mWrapped;
+    mWrapped = false;
+    return wrapped;
+  }
 };

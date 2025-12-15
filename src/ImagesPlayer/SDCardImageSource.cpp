@@ -65,6 +65,7 @@ void SDCardImageSource::nextImage() {
 
   int index = mImageNumber + 1;
   if (index >= (int)mImageFiles.size()) {
+    mWrapped = true;
     index = 0;
   }
 
