@@ -30,6 +30,7 @@ There are plenty of great ESP32 TV projects around ([credits](#-credits-and-refe
 - Battery voltage monitoring.
 - Web-based control panel for device management (WiFi settings, video streaming, battery voltage and various stats).
 - Over-the-Air (OTA) firmware updates.
+- JPEG image files also supported (slideshow mode).
 
 ## ⚙️ Hardware
 
