@@ -4,7 +4,8 @@
 #include <Arduino.h>
 #include <string>
 
-class VideoSource {
+class VideoSource
+{
 protected:
   VideoPlayerState mState = VideoPlayerState::STOPPED;
   int mAudioTimeMs = 0;
@@ -20,13 +21,16 @@ public:
   virtual bool getVideoFrame(uint8_t **buffer, size_t &bufferLength,
                              size_t &frameLength) = 0;
   // update the audio time
-  void updateAudioTime(int audioTimeMs) {
+  void updateAudioTime(int audioTimeMs)
+  {
     mAudioTimeMs = audioTimeMs;
     mLastAudioTimeUpdateMs = millis();
   }
-  void setState(VideoPlayerState state) {
+  void setState(VideoPlayerState state)
+  {
     mState = state;
-    switch (state) {
+    switch (state)
+    {
     case VideoPlayerState::PLAYING:
       mAudioTimeMs = 0;
       mLastAudioTimeUpdateMs = millis();
@@ -43,5 +47,5 @@ public:
   virtual int getChannelCount() = 0;
   virtual int getChannelNumber() { return mChannelNumber; }
   virtual std::string getChannelName() = 0;
-  virtual bool fetchChannelData() = 0;
+  virtual bool fetchVideoData() = 0;
 };

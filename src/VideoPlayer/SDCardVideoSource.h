@@ -8,7 +8,8 @@
 class SDCard;
 class AVIParser;
 
-class SDCardVideoSource : public VideoSource {
+class SDCardVideoSource : public VideoSource
+{
 private:
   std::vector<std::string> mAviFiles;
   // AVIParser *mCurrentChannelAudioParser = NULL;
@@ -23,7 +24,7 @@ private:
 public:
   SDCardVideoSource(SDCard *sdCard, const char *aviPath);
   void start();
-  bool fetchChannelData();
+  bool fetchVideoData();
   int getChannelCount() { return mAviFiles.size(); };
   std::string getChannelName();
   // AVIParser *getAudioParser()
@@ -35,7 +36,8 @@ public:
                      size_t &frameLength);
   void setChannel(int channel);
   void nextChannel();
-  bool consumeWrapped() {
+  bool consumeWrapped()
+  {
     bool wrapped = mWrapped;
     mWrapped = false;
     return wrapped;

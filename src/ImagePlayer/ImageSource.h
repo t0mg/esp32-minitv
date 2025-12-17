@@ -4,7 +4,8 @@
 #include <stdint.h>
 #include <string>
 
-class ImageSource {
+class ImageSource
+{
 public:
   virtual ~ImageSource() = default;
   virtual bool fetchImageData() = 0;

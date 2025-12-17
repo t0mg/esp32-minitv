@@ -1,6 +1,7 @@
 #pragma once
 
-enum class VideoPlayerState {
+enum class VideoPlayerState
+{
   STOPPED,
   PLAYING,
   PAUSED,

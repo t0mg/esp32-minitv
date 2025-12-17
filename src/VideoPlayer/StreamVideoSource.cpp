@@ -200,7 +200,7 @@ int StreamVideoSource::getChannelNumber()
   return 0;
 }
 
-bool StreamVideoSource::fetchChannelData()
+bool StreamVideoSource::fetchVideoData()
 {
   return true;
 }

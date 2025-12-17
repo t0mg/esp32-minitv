@@ -49,5 +49,5 @@ class StreamVideoSource: public VideoSource {
     {
         return mStreamState;
     }
-    bool fetchChannelData();
+    bool fetchVideoData();
 };

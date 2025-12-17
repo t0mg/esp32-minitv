@@ -1,8 +1,8 @@
 #include "Battery.h"
 #include "Button.h"
 #include "Display.h"
-#include "ImagesPlayer/ImagePlayer.h"
-#include "ImagesPlayer/SDCardImageSource.h"
+#include "ImagePlayer/ImagePlayer.h"
+#include "ImagePlayer/SDCardImageSource.h"
 #include "Prefs.h"
 #include "SDCard.h"
 #include "VideoPlayer/AVIParser.h"
@@ -34,21 +34,31 @@ unsigned long shutdown_time = 0;
 WifiManager wifiManager(&server, &prefs, &battery);
 bool wifiManagerActive = false;
 
-enum class PlaybackMode { VIDEO_ONLY, IMAGE_ONLY, VIDEO_THEN_IMAGES };
+enum class PlaybackMode
+{
+  VIDEO_ONLY,
+  IMAGE_ONLY,
+  VIDEO_THEN_IMAGES
+};
 PlaybackMode playbackMode = PlaybackMode::VIDEO_ONLY;
 bool videoActive = false;
 
-void setShutdownTime(int minutes) {
-  if (minutes > 0) {
+void setShutdownTime(int minutes)
+{
+  if (minutes > 0)
+  {
     shutdown_time = millis() + minutes * 60 * 1000;
     Serial.printf("Timer set, shutting down in %d minutes\n", minutes);
-  } else {
+  }
+  else
+  {
     shutdown_time = 0;
     Serial.println("Timer disabled");
   }
 }
 
-void setup() {
+void setup()
+{
   display.fillScreen(TFT_BLACK);
   Serial.begin(115200);
   delay(500); // Wait for serial to initialize
@@ -56,8 +66,10 @@ void setup() {
   battery.begin();
   prefs.begin();
   prefs.onBrightnessChanged(
-      [](int brightness) { display.setBrightness(brightness); });
-  prefs.onTimerMinutesChanged([](int minutes) { setShutdownTime(minutes); });
+      [](int brightness)
+      { display.setBrightness(brightness); });
+  prefs.onTimerMinutesChanged([](int minutes)
+                              { setShutdownTime(minutes); });
   setShutdownTime(prefs.getTimerMinutes());
   display.setBrightness(prefs.getBrightness());
   display.drawOSD("Tinytron", CENTER, STANDARD);
@@ -73,7 +85,8 @@ void setup() {
   SDCard *card =
       new SDCard(SD_CARD_MISO, SD_CARD_MOSI, SD_CARD_CLK, SD_CARD_CS);
   // check that the SD Card has mounted properly
-  if (!card->isMounted()) {
+  if (!card->isMounted())
+  {
     display.fillScreen(TFT_BLACK);
     display.drawOSD("No SD Card", TOP_LEFT, STANDARD);
     display.drawOSD("Initializing WiFi...", CENTER, STANDARD);
@@ -89,35 +102,46 @@ void setup() {
     display.drawOSD(wifiManager.getIpAddress().toString().c_str(), CENTER,
                     STANDARD);
     display.flushSprite();
-    if (!wifiManager.isAPMode()) {
+    if (!wifiManager.isAPMode())
+    {
       videoSource = new StreamVideoSource(&server);
     }
-  } else {
+  }
+  else
+  {
     display.fillScreen(TFT_BLACK);
     Serial.println("SD Card mounted successfully.");
     display.drawOSD("SD Card found !", CENTER, STANDARD);
     display.flushSprite();
 
     VideoSource *videoCandidate = new SDCardVideoSource(card, "/");
-    if (videoCandidate->fetchChannelData()) {
+    if (videoCandidate->fetchVideoData())
+    {
       videoSource = videoCandidate;
-    } else {
+    }
+    else
+    {
       delete videoCandidate;
     }
 
     ImageSource *imageCandidate = new SDCardImageSource(card, "/", false);
-    if (imageCandidate->fetchImageData()) {
+    if (imageCandidate->fetchImageData())
+    {
       imageSource = imageCandidate;
-    } else {
+    }
+    else
+    {
       delete imageCandidate;
     }
   }
 
-  if (videoSource != nullptr) {
+  if (videoSource != nullptr)
+  {
     videoPlayer = new VideoPlayer(videoSource, display, prefs, battery);
     videoPlayer->start();
-    while (!videoSource->fetchChannelData()) {
-      Serial.println("Failed to fetch channel data");
+    while (!videoSource->fetchVideoData())
+    {
+      Serial.println("Failed to fetch video data");
       delay(1000);
     }
     videoPlayer->setChannel(0);
@@ -125,27 +149,35 @@ void setup() {
     videoPlayer->play();
   }
 
-  if (imageSource != nullptr) {
+  if (imageSource != nullptr)
+  {
     imagePlayer = new ImagePlayer(imageSource, display, prefs, battery);
     imagePlayer->start();
-    while (!imageSource->fetchImageData()) {
+    while (!imageSource->fetchImageData())
+    {
       Serial.println("Failed to fetch image data");
       delay(1000);
     }
     imagePlayer->setImage(0);
     delay(500);
-    if (videoSource == nullptr) {
+    if (videoSource == nullptr)
+    {
       imagePlayer->play();
     }
   }
 
-  if (videoSource != nullptr && imageSource != nullptr) {
+  if (videoSource != nullptr && imageSource != nullptr)
+  {
     playbackMode = PlaybackMode::VIDEO_THEN_IMAGES;
     videoActive = true;
-  } else if (videoSource != nullptr) {
+  }
+  else if (videoSource != nullptr)
+  {
     playbackMode = PlaybackMode::VIDEO_ONLY;
     videoActive = true;
-  } else if (imageSource != nullptr) {
+  }
+  else if (imageSource != nullptr)
+  {
     playbackMode = PlaybackMode::IMAGE_ONLY;
     videoActive = false;
   }
@@ -155,15 +187,19 @@ void setup() {
 
 unsigned long lastBatteryUpdate = 0;
 
-void loop() {
+void loop()
+{
   delay(5);
 
   unsigned long now = millis();
-  if (shutdown_time > 0 && now > shutdown_time) {
-    if (videoPlayer != nullptr) {
+  if (shutdown_time > 0 && now > shutdown_time)
+  {
+    if (videoPlayer != nullptr)
+    {
       videoPlayer->stop();
     }
-    if (imagePlayer != nullptr) {
+    if (imagePlayer != nullptr)
+    {
       imagePlayer->stop();
     }
     display.fillScreen(TFT_BLACK);
@@ -172,27 +208,36 @@ void loop() {
     delay(5000);
     button.powerOff();
   }
-  if (now - lastBatteryUpdate > 10000) {
+  if (now - lastBatteryUpdate > 10000)
+  {
     battery.update();
     lastBatteryUpdate = now;
   }
 
   button.update();
-  if (wifiManagerActive) {
+  if (wifiManagerActive)
+  {
     wifiManager.handleClient();
   }
 
-  if (!wifiManagerActive) {
-    if (playbackMode == PlaybackMode::VIDEO_THEN_IMAGES) {
-      if (videoActive) {
+  if (!wifiManagerActive)
+  {
+    if (playbackMode == PlaybackMode::VIDEO_THEN_IMAGES)
+    {
+      if (videoActive)
+      {
         SDCardVideoSource *sdVideoSource = (SDCardVideoSource *)videoSource;
-        if (sdVideoSource != nullptr && sdVideoSource->consumeWrapped()) {
-          if (videoPlayer != nullptr) {
+        if (sdVideoSource != nullptr && sdVideoSource->consumeWrapped())
+        {
+          if (videoPlayer != nullptr)
+          {
             videoPlayer->stop();
           }
-          if (imagePlayer != nullptr) {
+          if (imagePlayer != nullptr)
+          {
             SDCardImageSource *sdImageSource = (SDCardImageSource *)imageSource;
-            if (sdImageSource != nullptr) {
+            if (sdImageSource != nullptr)
+            {
               // Prevent immediate bounce-back if image source still has a stale
               // wrapped flag from a previous cycle.
               sdImageSource->consumeWrapped();
@@ -203,15 +248,21 @@ void loop() {
           }
           videoActive = false;
         }
-      } else {
+      }
+      else
+      {
         SDCardImageSource *sdImageSource = (SDCardImageSource *)imageSource;
-        if (sdImageSource != nullptr && sdImageSource->consumeWrapped()) {
-          if (imagePlayer != nullptr) {
+        if (sdImageSource != nullptr && sdImageSource->consumeWrapped())
+        {
+          if (imagePlayer != nullptr)
+          {
             imagePlayer->stop();
           }
-          if (videoPlayer != nullptr) {
+          if (videoPlayer != nullptr)
+          {
             SDCardVideoSource *sdVideoSource = (SDCardVideoSource *)videoSource;
-            if (sdVideoSource != nullptr) {
+            if (sdVideoSource != nullptr)
+            {
               // Prevent immediate bounce-back if video source still has a stale
               // wrapped flag from a previous cycle.
               sdVideoSource->consumeWrapped();
@@ -225,23 +276,29 @@ void loop() {
       }
     }
 
-    if (button.isClicked()) {
-      if (videoPlayer != nullptr) {
+    if (button.isClicked())
+    {
+      if (videoPlayer != nullptr)
+      {
         videoPlayer->playPauseToggle();
       }
-      if (imagePlayer != nullptr) {
+      if (imagePlayer != nullptr)
+      {
         imagePlayer->playPauseToggle();
       }
     }
 
-    if (button.isDoubleClicked()) {
-      if (videoPlayer != nullptr) {
+    if (button.isDoubleClicked())
+    {
+      if (videoPlayer != nullptr)
+      {
         // videoPlayer->stop();
         // videoPlayer->playStatic();
         // delay(500);
         videoPlayer->nextChannel();
       }
-      if (imagePlayer != nullptr) {
+      if (imagePlayer != nullptr)
+      {
         imagePlayer->nextImage();
       }
     }

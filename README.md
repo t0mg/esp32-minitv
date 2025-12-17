@@ -8,7 +8,7 @@ https://www.youtube.com/watch?v=HspYfg55T3A
 
 Tinytron is an ESP32 powered video player with a 1.69 inch display, designed specifically around the [ESP32-S3-LCD-1.69 from Waveshare](https://www.waveshare.com/wiki/ESP32-S3-LCD-1.69). 
 
-It can play MJPEG files from a microSD card, or stream video content from a computer over WiFi. It runs on battery, features a web interface with Wifi access point mode for configuration, and can be controlled with a single physical button.
+It can play JPEG images and MJPEG video files from a microSD card, or stream video content from a computer over WiFi. It runs on battery, features a web interface with Wifi access point mode for configuration, and can be controlled with a single physical button.
 
 <p class="flex"><img src="assets/tinytron.gif" title="Playing from SD card (WING IT! by Blender Studio, CC BY 4.0)"><img src="assets/side.jpg" style="max-height:320px" title="Close up mqcro shot, side view"></p>
 
@@ -41,7 +41,7 @@ One of Tinytron's goals is to keep the BOM as short as possible. Only 3 parts, a
 
 | Part | Notes | Link (non affiliated) |
 | -- | -- | -- |
-| Waveshare ESP32-S3-LCD-1.69 | This is the **non touch version**. The touch version has thicker glass and a different footprint. | [Amazon.fr](https://www.amazon.fr/dp/B0D9PTZ5DY), [Aliexpress](https://fr.aliexpress.com/item/1005009927444668.html) |
+| Waveshare ESP32-S3-LCD-1.69 | This is the **non touch version**. The touch version has thicker glass and a different footprint.<br><br>The code is defaulting to revision V2 of the board (there's a sticker on the ESP chip). If you have a V1, see [here](#building-for-v1-revision-boards). | [Amazon.fr](https://www.amazon.fr/dp/B0D9PTZ5DY), [Aliexpress](https://fr.aliexpress.com/item/1005009927444668.html) |
 | Micro SD card reader breakout board | The case was modeled after this exact board.<br><br>Dimensions: 18x18x20mm | [Amazon.fr](https://www.amazon.fr/dp/B0DRXBF5RW) |
 | 400 mAH 3.7v LiPo battery | **Important:** the default connector is PH2.0 which isn't compatible with the Waveshare dev board. I spliced a [connector](https://www.amazon.fr/dp/B09TDCLZGB) but you can custom order the correct one (JST1.25mm) from the battery seller.<br><br>Technically optional it is possible to power the device via USB C connector.<br><br>Dimensions: 6x25x30mm | [Aliexpress](https://fr.aliexpress.com/item/1005007103616809.html) |
 | Micro SD card | FAT32 formatted. Also technically optional since the project can also stream video over local network. | |
@@ -79,9 +79,9 @@ Solder the 6 pin header to the SD breakout board. Trim the pins underneath.
 
 The ESP32 dev board comes with a cable that breaks out some IO. We need to cut some of the wires to save room, and use the rest to connect the SD card reader.
 
-**Note:** alternatively, you can make it a **non-destructive mod** by pulling the crimped end of the cables out of the connector instead of cutting them. This takes more time, and requires a pointy pin (for example sharp tweezers) and some patience, but it's possible.
+**Note:** alternatively, you can make it a **non-destructive mod** by pulling the crimped end of the cables out of the connector instead of cutting them. This takes a bit more time, and requires a pointy pin (for example sharp tweezers) and some patience, but it's possible and you can restore the cable by inserting the wires back in the connector later.
 
-Separate the lines that we'll keep from the ones we'll cut according to the table below, triple check everything and cut the unused wires flush against the connector. You can change the suggested wiring if you update the `platformio.ini` file accordingly, but these are the default.
+Separate the lines that we'll keep from the ones we'll lose according to the table below, triple check everything and cut the unused wires flush against the connector. You can change the suggested wiring if you update the `platformio.ini` file accordingly, but these are the default.
 
 | Keep | Description | Cut/Remove |
 | -- | -- | -- |
@@ -163,6 +163,24 @@ To build the project locally and flash it to the device, connect the ESP32-S3 bo
 platformio run --target upload
 ```
 
+#### Building for V1 revision boards
+
+As mentioned [in the Waveshare wiki](https://www.waveshare.com/wiki/ESP32-S3-LCD-1.69#09_LVGL_Keys_Bee) the pinout was changed slightly between revisions V1 and V2.
+
+| Peripheral | V1 pinout | V2 pinout | Notes |
+| -- | -- | -- | -- |
+| Buzzer (Buzz)	| GPIO33 | GPIO42 | Unused in Tinytron |
+| RTC interrupt (RTC_INT) | GPIO41 | GPIO39 | Unused in Tinytron |
+| Power control (SYS_EN) | GPIO35 | GPIO41 | Defined in `platformio.ini` |
+| Power control (SYS_OUT) | GPIO36 | GPIO40 | Defined in `platformio.ini` |
+
+The Tinytron code is defaulting to V2 pinout. In order to compile the firmware for V1 you'll need to update `SYS_EN` and `SYS_OUT` in [platformio.ini](https://github.com/t0mg/tinytron/blob/main/platformio.ini) like so:
+
+```
+  -DSYS_EN=GPIO_NUM_35
+  -DSYS_OUT=GPIO_NUM_36
+```
+
 ### Over-the-air updates
 
 Once the initial firmware is flashed, you can perform subsequent updates over the air. Connect to the device over WiFi, go to the Firmware tab, select your ota firmware file and click "Upload Firmware".
@@ -216,10 +234,10 @@ Long press the button (1 second) then release it to turn the Tinytron on and off
 
 ### SD Card Mode
 
-If a FAT32 formatted SD card containing `.avi` files is detected at boot, the device will automatically start playing them in alphabetical order. You can use the button to control the playback:
+If a FAT32 formatted SD card containing `.avi` and/or `.jpg` files is detected at boot, the device will automatically start playing them in alphabetical order (if there are both videos and pictures, the videos will play first, then the images). You can use the button to control the playback:
 
-- **Single Press:** Play/Pause the video.
-- **Double Press:** Play the next video file on the SD card.
+- **Single Press:** Play/Pause the video/slideshow.
+- **Double Press:** Play the next file on the SD card.
 
 In SD Card mode, WiFi is disabled to save battery.
 

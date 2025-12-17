@@ -5,7 +5,8 @@
 #include <Arduino.h>
 #include <list>
 
-void VideoPlayer::_framePlayerTask(void *param) {
+void VideoPlayer::_framePlayerTask(void *param)
+{
   VideoPlayer *player = (VideoPlayer *)param;
   player->framePlayerTask();
 }
@@ -17,17 +18,20 @@ VideoPlayer::VideoPlayer(VideoSource *videoSource, Display &display,
 
 void VideoPlayer::start() { mVideoSource->start(); }
 
-void VideoPlayer::playTask() {
+void VideoPlayer::playTask()
+{
   m_runTask = true;
   // launch the frame player task
   xTaskCreatePinnedToCore(_framePlayerTask, "Frame Player", 10000, this, 1,
                           &_framePlayerTaskHandle, 0);
 }
 
-void VideoPlayer::setChannel(int channel) {
+void VideoPlayer::setChannel(int channel)
+{
   m_runTask = false;
   // wait for the task to stop
-  while (_framePlayerTaskHandle != NULL) {
+  while (_framePlayerTaskHandle != NULL)
+  {
     vTaskDelay(10);
   }
   // update the video source
@@ -36,14 +40,17 @@ void VideoPlayer::setChannel(int channel) {
   playTask();
 }
 
-void VideoPlayer::nextChannel() {
-  if (mState == VideoPlayerState::PAUSED) {
+void VideoPlayer::nextChannel()
+{
+  if (mState == VideoPlayerState::PAUSED)
+  {
     play();
   }
 
   m_runTask = false;
   // wait for the task to stop
-  while (_framePlayerTaskHandle != NULL) {
+  while (_framePlayerTaskHandle != NULL)
+  {
     vTaskDelay(10);
   }
   mVideoSource->nextChannel();
@@ -51,24 +58,30 @@ void VideoPlayer::nextChannel() {
   playTask();
 }
 
-void VideoPlayer::play() {
-  if (mState == VideoPlayerState::PLAYING) {
+void VideoPlayer::play()
+{
+  if (mState == VideoPlayerState::PLAYING)
+  {
     return;
   }
   mState = VideoPlayerState::PLAYING;
   mVideoSource->setState(VideoPlayerState::PLAYING);
-  if (_framePlayerTaskHandle == NULL) {
+  if (_framePlayerTaskHandle == NULL)
+  {
     playTask();
   }
 }
 
-void VideoPlayer::stop() {
-  if (mState == VideoPlayerState::STOPPED) {
+void VideoPlayer::stop()
+{
+  if (mState == VideoPlayerState::STOPPED)
+  {
     return;
   }
   m_runTask = false;
   // wait for the task to stop
-  while (_framePlayerTaskHandle != NULL) {
+  while (_framePlayerTaskHandle != NULL)
+  {
     vTaskDelay(10);
   }
   mState = VideoPlayerState::STOPPED;
@@ -79,9 +92,11 @@ void VideoPlayer::stop() {
   mDisplay.flushSprite();
 }
 
-void VideoPlayer::pause() {
+void VideoPlayer::pause()
+{
   Serial.println("Pausing");
-  if (mState == VideoPlayerState::PAUSED) {
+  if (mState == VideoPlayerState::PAUSED)
+  {
     return;
   }
   char batText[12];
@@ -94,23 +109,31 @@ void VideoPlayer::pause() {
   Serial.println("Paused");
 }
 
-void VideoPlayer::playPauseToggle() {
-  if (mState == VideoPlayerState::PLAYING) {
+void VideoPlayer::playPauseToggle()
+{
+  if (mState == VideoPlayerState::PLAYING)
+  {
     pause();
-  } else {
+  }
+  else
+  {
     play();
   }
 }
 
-void VideoPlayer::playStatic() {
-  if (mState == VideoPlayerState::STATIC) {
+void VideoPlayer::playStatic()
+{
+  if (mState == VideoPlayerState::STATIC)
+  {
     return;
   }
 
   // If a task is running, stop it cleanly
-  if (_framePlayerTaskHandle != NULL) {
+  if (_framePlayerTaskHandle != NULL)
+  {
     m_runTask = false;
-    while (_framePlayerTaskHandle != NULL) {
+    while (_framePlayerTaskHandle != NULL)
+    {
       vTaskDelay(10);
     }
   }
@@ -127,7 +150,8 @@ void VideoPlayer::playStatic() {
 // double buffer the dma drawing otherwise we get corruption
 uint16_t *dmaBuffer[2] = {NULL, NULL};
 int dmaBufferIndex = 0;
-int _doDraw(JPEGDRAW *pDraw) {
+int _doDraw(JPEGDRAW *pDraw)
+{
   VideoPlayer *player = (VideoPlayer *)pDraw->pUser;
   // calculate the x offset to center the image if encoded at 288 pixels for
   // faster JPEG decoding
@@ -143,7 +167,8 @@ int _doDraw(JPEGDRAW *pDraw) {
 
 static unsigned short x = 12345, y = 6789, z = 42, w = 1729;
 
-unsigned short xorshift16() {
+unsigned short xorshift16()
+{
   unsigned short t = x ^ (x << 5);
   x = y;
   y = z;
@@ -152,7 +177,8 @@ unsigned short xorshift16() {
   return w & 0xFFFF;
 }
 
-void VideoPlayer::framePlayerTask() {
+void VideoPlayer::framePlayerTask()
+{
   uint16_t *staticBuffer = NULL;
   uint8_t *jpegBuffer = NULL;
   size_t jpegBufferLength = 0;
@@ -160,22 +186,29 @@ void VideoPlayer::framePlayerTask() {
   // used for calculating frame rate
   std::list<int> frameTimes;
   OSDLevel osdLevel = mPrefs.getOsdLevel();
-  while (m_runTask) {
+  while (m_runTask)
+  {
     // handle timed OSDs
     bool needsRedraw = false;
-    for (auto it = _timedOsds.begin(); it != _timedOsds.end();) {
-      if (millis() >= it->endTime) {
+    for (auto it = _timedOsds.begin(); it != _timedOsds.end();)
+    {
+      if (millis() >= it->endTime)
+      {
         it = _timedOsds.erase(it);
         needsRedraw = true;
-      } else {
+      }
+      else
+      {
         ++it;
       }
     }
-    if (needsRedraw) {
+    if (needsRedraw)
+    {
       redrawFrame();
     }
 
-    if (mState == VideoPlayerState::STOPPED) {
+    if (mState == VideoPlayerState::STOPPED)
+    {
       //   // draw the paused OSD over the current frame
       //   // drawOSDTimed("Paused", CENTER, OSDLevel::STANDARD);
       //   // push the result to the screen
@@ -189,19 +222,24 @@ void VideoPlayer::framePlayerTask() {
       //   }
       continue;
     }
-    if (mState == VideoPlayerState::STATIC) {
+    if (mState == VideoPlayerState::STATIC)
+    {
       // draw random pixels to the screen to simulate static
       // we'll do this 8 rows of pixels at a time to save RAM
       int width = mDisplay.width();
       int height = 8;
-      if (staticBuffer == NULL) {
+      if (staticBuffer == NULL)
+      {
         staticBuffer = (uint16_t *)malloc(width * height * 2);
       }
-      for (int i = 0; i < mDisplay.height(); i++) {
-        if (!m_runTask) {
+      for (int i = 0; i < mDisplay.height(); i++)
+      {
+        if (!m_runTask)
+        {
           break;
         }
-        for (int p = 0; p < width * height; p++) {
+        for (int p = 0; p < width * height; p++)
+        {
           int grey = xorshift16() >> 8;
           staticBuffer[p] = mDisplay.color565(grey, grey, grey);
         }
@@ -212,38 +250,46 @@ void VideoPlayer::framePlayerTask() {
     }
     // get the next frame
     if (!mVideoSource->getVideoFrame(&jpegBuffer, jpegBufferLength,
-                                     jpegLength)) {
+                                     jpegLength))
+    {
       // no frame ready yet
       vTaskDelay(10 / portTICK_PERIOD_MS);
       continue;
     }
     // store the current frame for redraw
-    if (_currentFrame == NULL || jpegLength > _currentFrameSize) {
-      if (_currentFrame) {
+    if (_currentFrame == NULL || jpegLength > _currentFrameSize)
+    {
+      if (_currentFrame)
+      {
         free(_currentFrame);
       }
       _currentFrame = (uint8_t *)malloc(jpegLength);
     }
-    if (_currentFrame) {
+    if (_currentFrame)
+    {
       _currentFrameSize = jpegLength;
       memcpy(_currentFrame, jpegBuffer, jpegLength);
     }
 
-    if (osdLevel >= OSDLevel::DEBUG) {
+    if (osdLevel >= OSDLevel::DEBUG)
+    {
       frameTimes.push_back(millis());
       // keep the frame rate elapsed time to 5 seconds
       while (frameTimes.size() > 0 &&
-             frameTimes.back() - frameTimes.front() > 5000) {
+             frameTimes.back() - frameTimes.front() > 5000)
+      {
         frameTimes.pop_front();
       }
     }
-    if (mJpeg.openRAM(jpegBuffer, jpegLength, _doDraw)) {
+    if (mJpeg.openRAM(jpegBuffer, jpegLength, _doDraw))
+    {
       mJpeg.setUserPointer(this);
       mJpeg.setPixelType(RGB565_BIG_ENDIAN);
       mJpeg.decode(0, 0, 0);
       mJpeg.close();
     }
-    if (osdLevel >= OSDLevel::DEBUG) {
+    if (osdLevel >= OSDLevel::DEBUG)
+    {
       char fpsText[8];
       sprintf(fpsText, "%d FPS", frameTimes.size() / 5);
       mDisplay.drawOSD(fpsText, BOTTOM_RIGHT, OSDLevel::DEBUG);
@@ -253,22 +299,28 @@ void VideoPlayer::framePlayerTask() {
       mDisplay.drawOSD(batText, BOTTOM_LEFT, OSDLevel::DEBUG);
     }
 
-    if (mBattery.isCharging()) {
+    if (mBattery.isCharging())
+    {
       mDisplay.drawOSD("Charging", TOP_RIGHT, OSDLevel::DEBUG);
-    } else if (mBattery.isLowBattery()) {
+    }
+    else if (mBattery.isLowBattery())
+    {
       mDisplay.drawOSD("Low Batt.", TOP_RIGHT, OSDLevel::STANDARD);
     }
 
-    for (const auto &osd : _timedOsds) {
+    for (const auto &osd : _timedOsds)
+    {
       mDisplay.drawOSD(osd.text.c_str(), osd.position, osd.level);
     }
     mDisplay.flushSprite();
   }
   // clean up
-  if (staticBuffer != NULL) {
+  if (staticBuffer != NULL)
+  {
     free(staticBuffer);
   }
-  if (_currentFrame != NULL) {
+  if (_currentFrame != NULL)
+  {
     free(_currentFrame);
     _currentFrame = NULL;
   }
@@ -277,22 +329,28 @@ void VideoPlayer::framePlayerTask() {
 }
 
 void VideoPlayer::drawOSDTimed(const std::string &text, OSDPosition position,
-                               OSDLevel level, uint32_t durationMs) {
+                               OSDLevel level, uint32_t durationMs)
+{
   _timedOsds.push_back({text, position, level, millis() + durationMs});
   // immediately draw the OSD
   mDisplay.drawOSD(text.c_str(), position, level);
 }
 
-void VideoPlayer::redrawFrame() {
-  if (_currentFrame) {
-    if (mJpeg.openRAM(_currentFrame, _currentFrameSize, _doDraw)) {
+void VideoPlayer::redrawFrame()
+{
+  if (_currentFrame)
+  {
+    if (mJpeg.openRAM(_currentFrame, _currentFrameSize, _doDraw))
+    {
       mJpeg.setUserPointer(this);
       mJpeg.setPixelType(RGB565_BIG_ENDIAN);
       mJpeg.decode(0, 0, 0);
       mJpeg.close();
     }
     mDisplay.flushSprite();
-  } else {
+  }
+  else
+  {
     mDisplay.fillScreen(DisplayColors::BLACK);
   }
 }

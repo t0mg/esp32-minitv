@@ -7,7 +7,8 @@
 
 class SDCard;
 
-class SDCardImageSource : public ImageSource {
+class SDCardImageSource : public ImageSource
+{
 private:
   std::vector<std::string> mImageFiles;
   SDCard *mSDCard;
@@ -34,7 +35,8 @@ public:
                      size_t &frameLength) override;
   uint32_t getAutoAdvanceIntervalMs() override { return (uint32_t)mIntervalMs; }
   bool showImageNameOSD() override { return mShowFilename; }
-  bool consumeWrapped() {
+  bool consumeWrapped()
+  {
     bool wrapped = mWrapped;
     mWrapped = false;
     return wrapped;

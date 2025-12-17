@@ -13,14 +13,16 @@ class Display;
 class Prefs;
 class VideoSource;
 
-struct TimedOsd {
+struct TimedOsd
+{
   std::string text;
   OSDPosition position;
   OSDLevel level;
   uint32_t endTime;
 };
 
-class VideoPlayer {
+class VideoPlayer
+{
 private:
   int mChannelVisible = 0;
   VideoPlayerState mState = VideoPlayerState::STOPPED;

@@ -4,6 +4,7 @@
     "ostream": "cpp",
     "random": "cpp",
     "*.old": "cpp",
-    "list": "cpp"
+    "list": "cpp",
+    "algorithm": "cpp"
   }
 }

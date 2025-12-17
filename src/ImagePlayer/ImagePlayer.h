@@ -12,16 +12,23 @@ class Prefs;
 class Battery;
 class ImageSource;
 
-struct TimedOsdImage {
+struct TimedOsdImage
+{
   std::string text;
   OSDPosition position;
   OSDLevel level;
   uint32_t endTime;
 };
 
-enum class ImagePlayerState { STOPPED, PLAYING, PAUSED };
+enum class ImagePlayerState
+{
+  STOPPED,
+  PLAYING,
+  PAUSED
+};
 
-class ImagePlayer {
+class ImagePlayer
+{
 private:
   Display &mDisplay;
   Prefs &mPrefs;
