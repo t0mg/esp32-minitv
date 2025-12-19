@@ -125,6 +125,8 @@ void MediaPlayer::playPauseToggle()
 void MediaPlayer::drawOSDTimed(const std::string &text, OSDPosition position,
                                OSDLevel level, uint32_t durationMs)
 {
+  if (text.empty())
+    return;
   mTimedOsds.push_back({text, position, level, millis() + durationMs});
   mDisplay.drawOSD(text.c_str(), position, level);
 }
